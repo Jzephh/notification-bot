@@ -14,13 +14,42 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
     
-    const user = await User.findOne({ 
+    // Try to find existing user
+    let user = await User.findOne({ 
       userId: verification.userId,
       companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID 
     });
 
+    // If user doesn't exist, create them
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      try {
+        // Get user info from Whop
+        const whopUser = await sdk.users.getUser({ userId: verification.userId });
+        
+        user = new User({
+          companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!,
+          userId: verification.userId,
+          username: whopUser.username || 'unknown',
+          name: whopUser.name || 'Unknown User',
+          avatarUrl: whopUser.profilePicture?.sourceUrl,
+          subscribedRoles: [],
+          isAdmin: false
+        });
+        
+        await user.save();
+      } catch (_whopError) {
+        // Create user with minimal data if Whop API fails
+        user = new User({
+          companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!,
+          userId: verification.userId,
+          username: 'user_' + verification.userId.slice(-6),
+          name: 'User ' + verification.userId.slice(-6),
+          subscribedRoles: [],
+          isAdmin: false
+        });
+        
+        await user.save();
+      }
     }
 
     return NextResponse.json({ 

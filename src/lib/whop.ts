@@ -1,43 +1,21 @@
 import { WhopServerSdk } from '@whop/api';
 
-type WhopSdkShape = {
-  verifyUserToken: (headers: Headers) => Promise<{ userId?: string }>;
-  users: {
-    getUser: (args: { userId: string }) => Promise<{
-      id: string;
-      name?: string;
-      username?: string;
-      profilePicture?: { sourceUrl?: string };
-      city?: string;
-      country?: string;
-      bio?: string;
-      phoneVerified?: boolean;
-      banner?: { sourceUrl?: string };
-      createdAt?: number;
-      userStat?: {
-        moneyEarned24Hours?: number;
-        moneyEarned30Days?: number;
-        moneyEarned7Days?: number;
-        moneyEarnedLifetime?: number;
-      };
-    }>;
-  };
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedSdk: any = null;
 
-let cachedSdk: WhopSdkShape | null = null;
-
-export function getWhopSdk(): WhopSdkShape {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getWhopSdk(): any {
   if (cachedSdk) return cachedSdk;
+  
   const apiKey = process.env.WHOP_API_KEY;
   const appId = process.env.NEXT_PUBLIC_WHOP_APP_ID;
+  
   if (!apiKey || !appId) {
-    throw new Error('Missing WHOP credentials');
+    throw new Error('Missing WHOP credentials - check your environment variables');
   }
-
-  // The server SDK validates user tokens and can act on behalf of the app
-  const sdk = new (WhopServerSdk as unknown as {
-    new (args: { appId: string; appApiKey: string }): WhopSdkShape;
-  })({
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sdk = new (WhopServerSdk as any)({
     appId,
     appApiKey: apiKey
   });
