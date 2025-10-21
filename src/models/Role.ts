@@ -5,7 +5,6 @@ export interface IRole extends Document {
   name: string;
   description?: string;
   color?: string;
-  subscribers: string[]; // Array of user IDs who subscribed to this role
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,7 +14,6 @@ const RoleSchema = new Schema<IRole>({
   name: { type: String, required: true },
   description: { type: String, required: false, default: '' },
   color: { type: String, required: false, default: '#1976d2' },
-  subscribers: [{ type: String }],
 }, {
   timestamps: true,
 });

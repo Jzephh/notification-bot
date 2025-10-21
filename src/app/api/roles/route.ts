@@ -15,15 +15,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
     
-    const user = await User.findOne({ 
-      userId: verification.userId,
-      companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID 
-    });
-
-    if (!user || !user.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
+    // Allow all authenticated users to view roles
     const roles = await Role.find({ 
       companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID 
     }).sort({ createdAt: -1 });
@@ -65,8 +57,7 @@ export async function POST(request: NextRequest) {
       companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
       name: name.toLowerCase().trim(),
       description: description || '',
-      color: color || '#1976d2',
-      subscribers: []
+      color: color || '#1976d2'
     });
 
     await role.save();

@@ -41,10 +41,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
-    // Get all subscribers
-    const subscribers = await User.find({ 
+    // Get all users who have this role assigned
+    const users = await User.find({ 
       companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
-      subscribedRoles: roleName.toLowerCase().trim()
+      roles: roleName.toLowerCase().trim()
     });
 
     // Create notification record
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       roleName: roleName.toLowerCase().trim(),
       message,
       sentBy: verification.userId,
-      sentTo: subscribers.map(s => s.userId)
+      sentTo: users.map(u => u.userId)
     });
 
     await notification.save();
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         roleName: notification.roleName,
         message: notification.message,
         sentTo: notification.sentTo,
-        subscriberCount: subscribers.length,
+        subscriberCount: users.length,
         createdAt: notification.createdAt
       }
     });

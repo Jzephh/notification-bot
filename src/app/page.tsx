@@ -22,7 +22,6 @@ import {
 import {
   Add as AddIcon,
   Notifications as NotificationsIcon,
-  Person as PersonIcon,
   AdminPanelSettings as AdminIcon,
   Send as SendIcon,
   CheckCircle as CheckIcon
@@ -34,7 +33,7 @@ interface User {
   username: string;
   name: string;
   avatarUrl?: string;
-  subscribedRoles: string[];
+  roles: string[];
   isAdmin: boolean;
 }
 
@@ -43,7 +42,6 @@ interface Role {
   name: string;
   description: string;
   color: string;
-  subscribers: string[];
   createdAt: string;
 }
 
@@ -122,28 +120,6 @@ export default function HomePage() {
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to create role');
-      }
-    } catch (_error) {
-      setError('Network error');
-    }
-  };
-
-  const handleSubscribe = async (roleName: string) => {
-    try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roleName })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSuccess(data.subscribed ? `Subscribed to @${roleName}` : `Unsubscribed from @${roleName}`);
-        fetchUser();
-        fetchRoles();
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to subscribe');
       }
     } catch (_error) {
       setError('Network error');
@@ -233,25 +209,27 @@ export default function HomePage() {
         )}
       </Box>
 
-      {/* User's Subscribed Roles */}
-      {user && user.subscribedRoles.length > 0 && (
+      {/* User's Assigned Roles */}
+      {user && user.roles.length > 0 && (
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Your Subscribed Roles
+              Your Assigned Roles
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={1}>
-              {user.subscribedRoles.map((roleName) => (
+              {user.roles.map((roleName) => (
                 <Chip
                   key={roleName}
                   label={`@${roleName}`}
                   color="primary"
                   variant="outlined"
-                  onClick={() => handleSubscribe(roleName)}
                   icon={<CheckIcon />}
                 />
               ))}
             </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              You will receive notifications when these roles are mentioned.
+            </Typography>
           </CardContent>
         </Card>
       )}
@@ -271,7 +249,7 @@ export default function HomePage() {
                     }}
                   />
                   <Typography variant="body2" color="text.secondary">
-                    {role.subscribers.length} subscribers
+                    Role
                   </Typography>
                 </Box>
                 
@@ -280,16 +258,6 @@ export default function HomePage() {
                 </Typography>
 
                 <Box display="flex" gap={1}>
-                  <Button
-                    variant={user?.subscribedRoles.includes(role.name) ? "contained" : "outlined"}
-                    size="small"
-                    onClick={() => handleSubscribe(role.name)}
-                    startIcon={user?.subscribedRoles.includes(role.name) ? <CheckIcon /> : <PersonIcon />}
-                    fullWidth
-                  >
-                    {user?.subscribedRoles.includes(role.name) ? 'Subscribed' : 'Subscribe'}
-                  </Button>
-                  
                   {user?.isAdmin && (
                     <Button
                       variant="contained"
@@ -299,9 +267,9 @@ export default function HomePage() {
                         setNotifyDialogOpen(true);
                       }}
                       startIcon={<SendIcon />}
-                      sx={{ minWidth: 'auto' }}
+                      fullWidth
                     >
-                      Notify
+                      Send Notification
                     </Button>
                   )}
                 </Box>
@@ -374,7 +342,7 @@ export default function HomePage() {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            This will notify all {selectedRole?.subscribers.length} subscribers of @{selectedRole?.name}
+            This will notify all users assigned to @{selectedRole?.name}
           </Typography>
           <TextField
             autoFocus

@@ -6,7 +6,7 @@ export interface IUser extends Document {
   username: string;
   name: string;
   avatarUrl?: string;
-  subscribedRoles: string[]; // Array of role names user is subscribed to
+  roles: string[]; // Array of role names assigned to user
   isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -18,7 +18,7 @@ const UserSchema = new Schema<IUser>({
   username: { type: String, required: true },
   name: { type: String, required: true },
   avatarUrl: String,
-  subscribedRoles: [String],
+  roles: [String],
   isAdmin: { type: Boolean, default: false },
 }, {
   timestamps: true,

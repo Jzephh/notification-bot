@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
           username: whopUser.username || 'unknown',
           name: whopUser.name || 'Unknown User',
           avatarUrl: whopUser.profilePicture?.sourceUrl,
-          subscribedRoles: [],
+          roles: [],
           isAdmin: false
         });
         
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
           userId: verification.userId,
           username: 'user_' + verification.userId.slice(-6),
           name: 'User ' + verification.userId.slice(-6),
-          subscribedRoles: [],
+          roles: [],
           isAdmin: false
         });
         
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         username: user.username,
         name: user.name,
         avatarUrl: user.avatarUrl,
-        subscribedRoles: user.subscribedRoles,
+        roles: user.roles,
         isAdmin: user.isAdmin
       }
     });
