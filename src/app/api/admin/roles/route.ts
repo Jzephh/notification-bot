@@ -37,7 +37,7 @@ export async function GET() {
       roles = [adminRole];
     }
     return NextResponse.json(roles);
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     const role = new Role({ companyId, name, description: description ?? '' });
     await role.save();
     return NextResponse.json(role);
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -95,7 +95,7 @@ export async function PUT(request: Request) {
 
     await role.save();
     return NextResponse.json(role);
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -120,7 +120,7 @@ export async function DELETE(request: Request) {
 
     await Role.deleteOne({ _id: roleId, companyId });
     return NextResponse.json({ success: true });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

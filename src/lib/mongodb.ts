@@ -11,10 +11,12 @@ if (!MONGO_DB) {
   throw new Error('Please define the MONGO_DB environment variable inside .env.local');
 }
 
-let cached: { conn: Connection | null; promise: Promise<Connection> | null } =
-  (global as any).mongoose || { conn: null, promise: null };
+const cached: { conn: Connection | null; promise: Promise<Connection> | null } =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).mongoose || { conn: null, promise: null };
 
-(global as any).mongoose = cached;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(globalThis as any).mongoose = cached;
 
 export default async function connectDB() {
   if (cached.conn) return cached.conn;

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     // Normally, here you would call Whop API to DM/notify these users.
     // For this demo, we just return the recipients list.
     return NextResponse.json({ recipients });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
