@@ -20,6 +20,27 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Role mentions demo (Whop-integrated)
+
+Environment variables (.env.local):
+
+```
+WHOP_API_KEY=...
+NEXT_PUBLIC_WHOP_APP_ID=...
+NEXT_PUBLIC_WHOP_COMPANY_ID=...
+DEV_USER_ID=dev-user-1
+MONGO_URI=mongodb://localhost:27017
+MONGO_DB=reaction_bot
+```
+
+Endpoints:
+
+- GET/POST/PUT/DELETE /api/admin/roles – admin role management
+- GET/POST/DELETE /api/user-roles – user subscribe/unsubscribe to roles
+- POST /api/webhooks/mentions – parse @role mentions and returns recipients
+
+Home page provides simple MUI controls to create roles, subscribe, and test mention parsing.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
