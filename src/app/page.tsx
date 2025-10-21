@@ -33,7 +33,10 @@ import {
   Notifications as NotificationsIcon,
   AdminPanelSettings as AdminIcon,
   Send as SendIcon,
-  CheckCircle as CheckIcon
+  CheckCircle as CheckIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import AdminSetup from '@/components/AdminSetup';
 
@@ -81,6 +84,12 @@ export default function HomePage() {
   const [newRoleDescription, setNewRoleDescription] = useState('');
   const [newRoleColor, setNewRoleColor] = useState('#1976d2');
   const [notificationMessage, setNotificationMessage] = useState('');
+  
+  // Role editing states
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [editRoleName, setEditRoleName] = useState('');
+  const [editRoleDescription, setEditRoleDescription] = useState('');
+  const [editRoleColor, setEditRoleColor] = useState('#1976d2');
 
   useEffect(() => {
     fetchUser();
@@ -202,6 +211,85 @@ export default function HomePage() {
       } else {
         const data = await response.json();
         setError(data.error || `Failed to ${action} role`);
+      }
+    } catch (_error) {
+      setError('Network error');
+    }
+  };
+
+  const handleEditRole = (role: Role) => {
+    setEditingRole(role);
+    setEditRoleName(role.name);
+    setEditRoleDescription(role.description);
+    setEditRoleColor(role.color);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!editingRole) return;
+
+    try {
+      const response = await fetch('/api/roles', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roleId: editingRole._id,
+          name: editRoleName,
+          description: editRoleDescription,
+          color: editRoleColor
+        })
+      });
+
+      if (response.ok) {
+        setSuccess('Role updated successfully!');
+        setEditingRole(null);
+        setEditRoleName('');
+        setEditRoleDescription('');
+        setEditRoleColor('#1976d2');
+        fetchRoles();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to update role');
+      }
+    } catch (_error) {
+      setError('Network error');
+    }
+  };
+
+  const handleDeleteRole = async (roleId: string) => {
+    if (!confirm('Are you sure you want to delete this role? This will remove it from all users.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/roles?roleId=${roleId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setSuccess('Role deleted successfully!');
+        fetchRoles();
+        fetchUsers(); // Refresh users to show updated roles
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete role');
+      }
+    } catch (_error) {
+      setError('Network error');
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    try {
+      const response = await fetch(`/api/notifications?notificationId=${notificationId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setSuccess('Notification deleted successfully!');
+        fetchNotifications();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete notification');
       }
     } catch (_error) {
       setError('Network error');
@@ -347,6 +435,13 @@ export default function HomePage() {
                         {notification.message}
                       </Typography>
                     </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteNotification(notification.id)}
+                      color="error"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
                   </Box>
                 </Card>
               ))}
@@ -369,9 +464,29 @@ export default function HomePage() {
                       fontWeight: 'bold'
                     }}
                   />
-                  <Typography variant="body2" color="text.secondary">
-                    Role
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="body2" color="text.secondary">
+                      Role
+                    </Typography>
+                    {user?.isAdmin && (
+                      <>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleEditRole(role)}
+                          color="primary"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteRole(role._id)}
+                          color="error"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>
+                    )}
+                  </Box>
                 </Box>
                 
                 <Typography variant="body2" color="text.secondary" mb={2}>
@@ -578,6 +693,49 @@ export default function HomePage() {
           >
             Send Notification
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={!!editingRole} onClose={() => setEditingRole(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Edit Role: @{editingRole?.name}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Role Name"
+            fullWidth
+            variant="outlined"
+            value={editRoleName}
+            onChange={(e) => setEditRoleName(e.target.value)}
+            placeholder="e.g., flips"
+          />
+          <TextField
+            margin="dense"
+            label="Description"
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={3}
+            value={editRoleDescription}
+            onChange={(e) => setEditRoleDescription(e.target.value)}
+            placeholder="Describe what this role is for..."
+          />
+          <TextField
+            margin="dense"
+            label="Color"
+            type="color"
+            fullWidth
+            variant="outlined"
+            value={editRoleColor}
+            onChange={(e) => setEditRoleColor(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingRole(null)}>Cancel</Button>
+          <Button onClick={handleUpdateRole} variant="contained">Update Role</Button>
         </DialogActions>
       </Dialog>
 

@@ -45,3 +45,50 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const sdk = getWhopSdk();
+    const verification = await sdk.verifyUserToken(request.headers);
+    
+    if (!verification.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+    
+    const { searchParams } = new URL(request.url);
+    const notificationId = searchParams.get('notificationId');
+
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
+    }
+
+    // Find the notification and check if user was mentioned in it
+    const notification = await Notification.findOne({ 
+      _id: notificationId,
+      companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
+      sentTo: verification.userId
+    });
+
+    if (!notification) {
+      return NextResponse.json({ error: 'Notification not found or access denied' }, { status: 404 });
+    }
+
+    // Remove user from sentTo array (soft delete for this user)
+    notification.sentTo = notification.sentTo.filter((userId: string) => userId !== verification.userId);
+    
+    if (notification.sentTo.length === 0) {
+      // If no users left, delete the notification entirely
+      await Notification.deleteOne({ _id: notificationId });
+    } else {
+      // Otherwise, just update the sentTo array
+      await notification.save();
+    }
+
+    return NextResponse.json({ success: true, message: 'Notification deleted' });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
