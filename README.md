@@ -1,57 +1,194 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Role Notification System
 
-## Getting Started
+A Next.js application that provides role-based notification functionality integrated with Whop API. Users can create roles, subscribe to them, and receive notifications when those roles are pinged.
 
-First, run the development server:
+## Features
 
+### 🎯 Role Management
+- **Admin Interface**: Create and manage roles with custom names, descriptions, and colors
+- **Role Subscription**: Users can subscribe/unsubscribe to roles with a single click
+- **Real-time Updates**: Instant updates when roles are created or subscriptions change
+
+### 🔔 Notification System
+- **Role-based Pings**: Admins can send notifications to all subscribers of a specific role
+- **Instant Delivery**: Notifications are sent immediately to all subscribed users
+- **Notification History**: Track all sent notifications with timestamps
+
+### 👥 User Management
+- **Whop Integration**: Seamless authentication using Whop API
+- **User Profiles**: Display user avatars, names, and subscription status
+- **Admin Permissions**: Role-based access control for admin functions
+
+### 🎨 Modern UI
+- **Material-UI Design**: Beautiful, responsive interface using MUI components
+- **Real-time Feedback**: Success/error messages with snackbar notifications
+- **Intuitive Navigation**: Easy-to-use interface for all user types
+
+## Technology Stack
+
+- **Frontend**: Next.js 15, React, TypeScript
+- **UI Framework**: Material-UI (MUI)
+- **Backend**: Next.js API routes
+- **Database**: MongoDB with Mongoose
+- **Authentication**: Whop SDK integration
+- **Styling**: Tailwind CSS + MUI
+
+## Setup Instructions
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Environment Configuration
+Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# Whop API Credentials
+WHOP_API_KEY=your_whop_api_key
+NEXT_PUBLIC_WHOP_APP_ID=your_app_id
+NEXT_PUBLIC_WHOP_AGENT_USER_ID=your_agent_user_id
+NEXT_PUBLIC_WHOP_COMPANY_ID=your_company_id
+
+# Database Configuration
+MONGO_URI=your_mongodb_connection_string
+MONGO_DB=reaction_bot_db
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### 3. Run the Development Server
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 4. Open Your Browser
+Navigate to `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Schema
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Role mentions demo (Whop-integrated)
-
-Environment variables (.env.local):
-
+### User Model
+```typescript
+{
+  companyId: string;
+  userId: string;
+  username: string;
+  name: string;
+  avatarUrl?: string;
+  subscribedRoles: string[];
+  isAdmin: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
-WHOP_API_KEY=...
-NEXT_PUBLIC_WHOP_APP_ID=...
-NEXT_PUBLIC_WHOP_COMPANY_ID=...
-DEV_USER_ID=dev-user-1
-MONGO_URI=mongodb://localhost:27017
-MONGO_DB=reaction_bot
+
+### Role Model
+```typescript
+{
+  companyId: string;
+  name: string;
+  description?: string;
+  color?: string;
+  subscribers: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
 ```
 
-Endpoints:
+### Notification Model
+```typescript
+{
+  companyId: string;
+  roleName: string;
+  message: string;
+  sentBy: string;
+  sentTo: string[];
+  createdAt: Date;
+}
+```
 
-- GET/POST/PUT/DELETE /api/admin/roles – admin role management
-- GET/POST/DELETE /api/user-roles – user subscribe/unsubscribe to roles
-- POST /api/webhooks/mentions – parse @role mentions and returns recipients
+## API Endpoints
 
-Home page provides simple MUI controls to create roles, subscribe, and test mention parsing.
+### Authentication
+- `GET /api/auth/verify` - Verify user token with Whop
 
-## Learn More
+### Role Management
+- `GET /api/roles` - Get all roles (admin only)
+- `POST /api/roles` - Create new role (admin only)
 
-To learn more about Next.js, take a look at the following resources:
+### User Subscriptions
+- `POST /api/subscribe` - Subscribe/unsubscribe to a role
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Notifications
+- `POST /api/notify` - Send notification to role subscribers (admin only)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Usage Guide
 
-## Deploy on Vercel
+### For Admins
+1. **Create Roles**: Click "Create New Role" button to add new roles like @flips, @green, @yellow
+2. **Send Notifications**: Click "Notify" button on any role card to send messages to all subscribers
+3. **Manage Users**: View user subscription status and manage role assignments
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### For Users
+1. **Subscribe to Roles**: Click "Subscribe" button on role cards to join notification lists
+2. **View Subscriptions**: See all your subscribed roles in the "Your Subscribed Roles" section
+3. **Unsubscribe**: Click on subscribed role chips to unsubscribe
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Role Creation Example
+
+To create roles like @flips, @green, @yellow:
+
+1. Login as admin
+2. Click "Create New Role"
+3. Enter role name (e.g., "flips")
+4. Add description (optional)
+5. Choose color
+6. Click "Create Role"
+
+## Notification Flow
+
+1. Admin creates a role (e.g., @flips)
+2. Users subscribe to the role by clicking "Subscribe"
+3. Admin clicks "Notify" on the role card
+4. Admin types a message and sends it
+5. All subscribers receive the notification instantly
+
+## Deployment
+
+1. Build the application:
+   ```bash
+   npm run build
+   ```
+
+2. Deploy to your preferred platform (Vercel, Netlify, etc.)
+
+3. Ensure environment variables are set in production
+
+## Testing the System
+
+1. **Create Test Roles**: Create roles like @flips, @green, @yellow
+2. **Subscribe Users**: Have users subscribe to different roles
+3. **Send Notifications**: Use admin account to ping roles and verify notifications
+4. **Verify Delivery**: Check that subscribed users receive notifications
+
+## Error Handling
+
+The application includes comprehensive error handling for:
+- Authentication failures
+- Database connection issues
+- Invalid role names
+- Missing permissions
+- Network errors
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.

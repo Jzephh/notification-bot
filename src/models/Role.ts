@@ -4,23 +4,28 @@ export interface IRole extends Document {
   companyId: string;
   name: string;
   description?: string;
+  color?: string;
+  subscribers: string[]; // Array of user IDs who subscribed to this role
   createdAt: Date;
   updatedAt: Date;
 }
 
-const RoleSchema = new Schema<IRole>(
-  {
-    companyId: { type: String, required: true, index: true },
-    name: { type: String, required: true },
-    description: { type: String, default: '' },
-  },
-  { timestamps: true }
-);
+const RoleSchema = new Schema<IRole>({
+  companyId: { type: String, required: true, index: true },
+  name: { type: String, required: true },
+  description: { type: String, required: false, default: '' },
+  color: { type: String, required: false, default: '#1976d2' },
+  subscribers: [{ type: String }],
+}, {
+  timestamps: true,
+});
 
-// Ensure unique role names per company
+// Compound index to ensure unique role names per company
 RoleSchema.index({ companyId: 1, name: 1 }, { unique: true });
 
-export default (mongoose.models.Role as mongoose.Model<IRole>) ||
-  mongoose.model<IRole>('Role', RoleSchema);
+// Clear any existing model to avoid conflicts
+if (mongoose.models.Role) {
+  delete mongoose.models.Role;
+}
 
-
+export default mongoose.model<IRole>('Role', RoleSchema);
