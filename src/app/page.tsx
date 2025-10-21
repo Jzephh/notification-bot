@@ -197,8 +197,8 @@ export default function HomePage() {
     );
   }
 
-  // Show admin setup if user exists but is not admin
-  if (user && !user.isAdmin) {
+  // Show admin setup only if user doesn't exist (first time setup)
+  if (!user) {
     return <AdminSetup />;
   }
 

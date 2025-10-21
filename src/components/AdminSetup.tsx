@@ -10,7 +10,8 @@ import {
   TextField,
   Alert,
   Snackbar,
-  CircularProgress
+  CircularProgress,
+  Box
 } from '@mui/material';
 import { AdminPanelSettings as AdminIcon } from '@mui/icons-material';
 
@@ -60,6 +61,8 @@ export default function AdminSetup() {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             Enter the admin setup key to gain admin privileges for this role notification system.
+            <br />
+            <strong>Note:</strong> You can use the app as a regular user without admin privileges.
           </Typography>
           
           <TextField
@@ -72,16 +75,26 @@ export default function AdminSetup() {
             placeholder="Enter admin setup key"
           />
           
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleSetup}
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={20} /> : <AdminIcon />}
-            fullWidth
-          >
-            {loading ? 'Setting up...' : 'Setup Admin'}
-          </Button>
+          <Box display="flex" gap={2} mt={2}>
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => window.location.reload()}
+              fullWidth
+            >
+              Skip - Use as Regular User
+            </Button>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={handleSetup}
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : <AdminIcon />}
+              fullWidth
+            >
+              {loading ? 'Setting up...' : 'Setup Admin'}
+            </Button>
+          </Box>
           
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
             Contact your system administrator for the setup key.
