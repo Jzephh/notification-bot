@@ -64,6 +64,7 @@ interface Notification {
   message: string;
   sentBy: string;
   createdAt: string;
+  isRead: boolean;
 }
 
 export default function HomePage() {
@@ -161,6 +162,55 @@ export default function HomePage() {
       }
     } catch {
       setError('Network error');
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId,
+          action: 'mark-read'
+        })
+      });
+
+      if (response.ok) {
+        // Update local state to mark as read
+        setNotifications(prev => 
+          prev.map(notif => 
+            notif.id === notificationId 
+              ? { ...notif, isRead: true }
+              : notif
+          )
+        );
+      }
+    } catch {
+      // Silently fail - don't show error for read status
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId: 'all', // Special ID for mark-all-read
+          action: 'mark-all-read'
+        })
+      });
+
+      if (response.ok) {
+        // Update local state to mark all as read
+        setNotifications(prev => 
+          prev.map(notif => ({ ...notif, isRead: true }))
+        );
+        setSuccess('All notifications marked as read');
+      }
+    } catch {
+      setError('Failed to mark all notifications as read');
     }
   };
 
@@ -410,43 +460,96 @@ export default function HomePage() {
       {notifications.length > 0 && (
         <Card sx={{ mb: 4 }}>
           <CardContent>
-          <Typography variant="h6" gutterBottom>
-              Your Notifications
-            </Typography>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6" gutterBottom>
+                Your Notifications
+                {notifications.filter(n => !n.isRead).length > 0 && (
+                  <Chip 
+                    label={`${notifications.filter(n => !n.isRead).length} unread`}
+                    color="error"
+                    size="small"
+                    sx={{ ml: 2 }}
+                  />
+                )}
+              </Typography>
+              {notifications.filter(n => !n.isRead).length > 0 && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={markAllNotificationsAsRead}
+                >
+                  Mark All Read
+                </Button>
+              )}
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Notifications for roles you are assigned to:
-          </Typography>
+            </Typography>
             <Box display="flex" flexDirection="column" gap={2}>
               {notifications.map((notification) => (
-                <Card key={notification.id} variant="outlined" sx={{ p: 2 }}>
+                <Card 
+                  key={notification.id} 
+                  variant="outlined" 
+                  sx={{ 
+                    p: 2,
+                    borderLeft: notification.isRead ? 'none' : '4px solid',
+                    borderLeftColor: 'primary.main',
+                    backgroundColor: notification.isRead ? 'transparent' : 'action.hover'
+                  }}
+                >
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                     <Box flex={1}>
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
-            <Chip
+                        <Chip
                           label={`@${notification.roleName}`} 
                           size="small" 
-              color="primary"
-              variant="outlined"
-            />
+                          color="primary"
+                          variant="outlined"
+                        />
+                        {!notification.isRead && (
+                          <Chip
+                            label="NEW"
+                            size="small"
+                            color="error"
+                            variant="filled"
+                          />
+                        )}
                         <Typography variant="caption" color="text.secondary">
                           {new Date(notification.createdAt).toLocaleString()}
                         </Typography>
                       </Box>
-                      <Typography variant="body1">
+                      <Typography 
+                        variant="body1"
+                        sx={{ 
+                          fontWeight: notification.isRead ? 'normal' : 'bold'
+                        }}
+                      >
                         {notification.message}
                       </Typography>
                     </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteNotification(notification.id)}
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    <Box display="flex" gap={1}>
+                      {!notification.isRead && (
+                        <IconButton
+                          size="small"
+                          onClick={() => markNotificationAsRead(notification.id)}
+                          color="primary"
+                          title="Mark as read"
+                        >
+                          <CheckIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteNotification(notification.id)}
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Box>
                 </Card>
               ))}
-        </Box>
+            </Box>
           </CardContent>
         </Card>
       )}

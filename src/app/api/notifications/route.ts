@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
         roleName: notif.roleName,
         message: notif.message,
         sentBy: notif.sentBy,
-        createdAt: notif.createdAt
+        createdAt: notif.createdAt,
+        isRead: notif.readBy.includes(verification.userId)
       }))
     });
   } catch (error) {
@@ -89,6 +90,63 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     console.error('Delete notification error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const sdk = getWhopSdk();
+    const verification = await sdk.verifyUserToken(request.headers);
+    
+    if (!verification.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    await connectDB();
+    
+    const { notificationId, action } = await request.json();
+
+    if (!notificationId) {
+      return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
+    }
+
+    if (action === 'mark-read') {
+      // Mark notification as read for this user
+      const notification = await Notification.findOne({ 
+        _id: notificationId,
+        companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
+        sentTo: verification.userId
+      });
+
+      if (!notification) {
+        return NextResponse.json({ error: 'Notification not found or access denied' }, { status: 404 });
+      }
+
+      // Add user to readBy array if not already there
+      if (!notification.readBy.includes(verification.userId)) {
+        notification.readBy.push(verification.userId);
+        await notification.save();
+      }
+
+      return NextResponse.json({ success: true, message: 'Notification marked as read' });
+    } else if (action === 'mark-all-read') {
+      // Mark all notifications as read for this user
+      await Notification.updateMany(
+        { 
+          companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
+          sentTo: verification.userId,
+          readBy: { $ne: verification.userId }
+        },
+        { $push: { readBy: verification.userId } }
+      );
+
+      return NextResponse.json({ success: true, message: 'All notifications marked as read' });
+    } else {
+      return NextResponse.json({ error: 'Invalid action. Use "mark-read" or "mark-all-read"' }, { status: 400 });
+    }
+  } catch (error) {
+    console.error('Mark notification error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

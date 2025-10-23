@@ -6,6 +6,7 @@ export interface INotification extends Document {
   message: string;
   sentBy: string; // User ID who sent the notification
   sentTo: string[]; // Array of user IDs who received the notification
+  readBy: string[]; // Array of user IDs who have read the notification
   createdAt: Date;
 }
 
@@ -15,6 +16,7 @@ const NotificationSchema = new Schema<INotification>({
   message: { type: String, required: true },
   sentBy: { type: String, required: true },
   sentTo: [{ type: String }],
+  readBy: [{ type: String }], // Array of user IDs who have read this notification
 }, {
   timestamps: true,
 });
