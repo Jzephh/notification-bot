@@ -70,7 +70,7 @@ export class MessageMonitorService {
       this.isRunning = true;
       this.pollingInterval = setInterval(() => {
         this.pollAllExperiences().catch(console.error);
-      }, 10000);
+      }, 3000);
 
       console.log('✅ Message monitoring started - watching for @rolename mentions');
       
