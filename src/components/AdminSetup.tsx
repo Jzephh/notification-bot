@@ -44,7 +44,7 @@ export default function AdminSetup() {
         const data = await response.json();
         setError(data.error || 'Failed to setup admin');
       }
-    } catch (_error) {
+    } catch {
       setError('Network error');
     } finally {
       setLoading(false);

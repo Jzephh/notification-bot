@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
           roles: [],
           isAdmin: false
         });
-      } catch (_whopError) {
+      } catch {
         return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
       }
     }

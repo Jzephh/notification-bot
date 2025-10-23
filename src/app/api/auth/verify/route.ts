@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         });
         
         await user.save();
-      } catch (_whopError) {
+      } catch {
         // Create user with minimal data if Whop API fails
         user = new User({
           companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!,
