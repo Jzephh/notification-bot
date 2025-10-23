@@ -285,7 +285,8 @@ export class MessageMonitorService {
       const notification = new Notification({
         companyId: this.companyId,
         roleName: roleName,
-        message: `@${roleName} mentioned by ${message.username} in ${message.experienceName}`,
+        message: `@${roleName} mentioned by Admin in ${message.experienceName},
+        the article: ${message.content}`,
         sentBy: message.userId,
         sentTo: users.map(u => u.userId)
       });
