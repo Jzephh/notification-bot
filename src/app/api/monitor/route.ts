@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getWhopSdk } from '@/lib/whop';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
-
-// Global message monitor instance
-let messageMonitor: { 
-  start: () => Promise<void>; 
-  stop: () => void; 
-  getStatus: () => { isRunning: boolean; chatExperiences: Array<{ id: string; name: string; appName: string }>; experienceCount: number };
-  clearMessageTracking: () => Promise<void>;
-} | null = null;
+import MonitoringManager from '@/services/MonitoringManager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,56 +25,66 @@ export async function POST(request: NextRequest) {
     }
 
     const { action } = await request.json();
+    const manager = MonitoringManager.getInstance();
 
     if (action === 'start') {
-      if (messageMonitor && messageMonitor.getStatus().isRunning) {
+      const status = manager.getStatus();
+      
+      if (status.isRunning) {
         return NextResponse.json({ 
           success: true, 
           message: 'Message monitoring is already running',
-          status: messageMonitor.getStatus()
+          status
         });
       }
 
-      // Import MessageMonitorService dynamically to avoid circular dependencies
-      const { MessageMonitorService } = await import('@/services/MessageMonitorService');
-      
-      messageMonitor = new MessageMonitorService(process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!);
-      await messageMonitor.start();
+      await manager.startMonitoring(process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!);
+      const newStatus = manager.getStatus();
 
       return NextResponse.json({ 
         success: true, 
         message: 'Message monitoring started successfully',
-        status: messageMonitor.getStatus()
+        status: newStatus
       });
 
     } else if (action === 'stop') {
-      if (!messageMonitor || !messageMonitor.getStatus().isRunning) {
+      const status = manager.getStatus();
+      
+      if (!status.isRunning) {
         return NextResponse.json({ 
           success: true, 
           message: 'Message monitoring is not running',
-          status: { isRunning: false, chatExperiences: [], experienceCount: 0 }
+          status
         });
       }
 
-      messageMonitor.stop();
-      messageMonitor = null;
+      manager.stopMonitoring();
+      const newStatus = manager.getStatus();
 
       return NextResponse.json({ 
         success: true, 
         message: 'Message monitoring stopped successfully',
-        status: { isRunning: false, chatExperiences: [], experienceCount: 0 }
+        status: newStatus
       });
 
     } else if (action === 'clear') {
-      if (messageMonitor) {
-        await messageMonitor.clearMessageTracking();
-      }
+      await manager.clearMessageTracking();
       return NextResponse.json({ 
         success: true, 
         message: 'Message tracking cleared - will start fresh on next poll' 
       });
+    } else if (action === 'toggle-auto-start') {
+      const { enabled } = await request.json();
+      manager.setAutoStartEnabled(enabled);
+      const status = manager.getStatus();
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: `Auto-start ${enabled ? 'enabled' : 'disabled'}`,
+        status
+      });
     } else {
-      return NextResponse.json({ error: 'Invalid action. Use "start", "stop", or "clear"' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid action. Use "start", "stop", "clear", or "toggle-auto-start"' }, { status: 400 });
     }
 
   } catch (error) {
@@ -111,11 +114,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Return current monitoring status
-    const status = messageMonitor ? messageMonitor.getStatus() : { 
-      isRunning: false, 
-      chatExperiences: [], 
-      experienceCount: 0 
-    };
+    const manager = MonitoringManager.getInstance();
+    const status = manager.getStatus();
 
     return NextResponse.json({ 
       success: true, 

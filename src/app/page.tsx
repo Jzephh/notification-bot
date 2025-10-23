@@ -39,6 +39,7 @@ import {
 } from '@mui/icons-material';
 import AdminSetup from '@/components/AdminSetup';
 import MessageMonitor from '@/components/MessageMonitor';
+import '@/lib/auto-start'; // Auto-start monitoring when server starts
 
 interface User {
   id: string;

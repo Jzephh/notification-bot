@@ -22,6 +22,8 @@ import {
 
 interface MonitorStatus {
   isRunning: boolean;
+  isAutoStarted: boolean;
+  autoStartEnabled: boolean;
   chatExperiences: Array<{
     id: string;
     name: string;
@@ -33,6 +35,8 @@ interface MonitorStatus {
 export default function MessageMonitor() {
   const [status, setStatus] = useState<MonitorStatus>({
     isRunning: false,
+    isAutoStarted: false,
+    autoStartEnabled: true,
     chatExperiences: [],
     experienceCount: 0,
   });
@@ -146,6 +150,37 @@ export default function MessageMonitor() {
     }
   };
 
+  // Toggle auto-start
+  const toggleAutoStart = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/monitor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          action: 'toggle-auto-start',
+          enabled: !status.autoStartEnabled 
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setStatus(data.status);
+      } else {
+        setError(data.error || 'Failed to toggle auto-start');
+      }
+    } catch {
+      setError('Failed to toggle auto-start');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load status on component mount
   useEffect(() => {
     fetchStatus();
@@ -198,6 +233,34 @@ export default function MessageMonitor() {
           />
           
           {loading && <CircularProgress size={20} />}
+        </Box>
+
+        {/* Auto-start Status and Control */}
+        <Box display="flex" alignItems="center" gap={2} mb={3}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={status.autoStartEnabled}
+                onChange={toggleAutoStart}
+                disabled={loading}
+                color="secondary"
+              />
+            }
+            label={
+              <Typography variant="body2">
+                Auto-start enabled
+              </Typography>
+            }
+          />
+          
+          {status.isAutoStarted && (
+            <Chip
+              label="Auto-started"
+              color="success"
+              size="small"
+              variant="outlined"
+            />
+          )}
         </Box>
 
         <Box display="flex" gap={2} mb={3}>
