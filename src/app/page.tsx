@@ -111,7 +111,12 @@ export default function HomePage() {
       const response = await fetch('/api/auth/verify');
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        // Ensure roles array is clean and valid
+        const cleanUser = {
+          ...data.user,
+          roles: Array.isArray(data.user.roles) ? data.user.roles.filter((role: string) => role && typeof role === 'string' && role.trim() !== '') : []
+        };
+        setUser(cleanUser);
       } else {
         setError('Failed to authenticate user');
       }
@@ -431,14 +436,14 @@ export default function HomePage() {
       </Box>
 
       {/* User's Assigned Roles */}
-      {user && user.roles.length > 0 && (
+      {user && user.roles && user.roles.length > 0 && (
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Your Assigned Roles
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={1}>
-              {user.roles.map((roleName) => (
+              {user.roles.filter(role => role && role.trim() !== '').map((roleName) => (
                 <Chip
                   key={roleName}
                   label={`@${roleName}`}
@@ -450,6 +455,20 @@ export default function HomePage() {
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               You will receive notifications when these roles are mentioned.
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Show message when user has no roles */}
+      {user && (!user.roles || user.roles.length === 0) && (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Your Assigned Roles
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              You don&apos;t have any roles assigned. Contact an admin to assign roles to you.
             </Typography>
           </CardContent>
         </Card>
@@ -671,8 +690,8 @@ export default function HomePage() {
                       </TableCell>
                       <TableCell>
                         <Box display="flex" flexWrap="wrap" gap={0.5}>
-                          {targetUser.roles.length > 0 ? (
-                            targetUser.roles.map((roleName) => (
+                          {targetUser.roles && targetUser.roles.length > 0 && targetUser.roles.filter(role => role && role.trim() !== '').length > 0 ? (
+                            targetUser.roles.filter(role => role && role.trim() !== '').map((roleName) => (
                               <Chip
                                 key={roleName}
                                 label={`@${roleName}`}
@@ -696,14 +715,14 @@ export default function HomePage() {
                               <IconButton
                                 size="small"
                                 onClick={() => handleAssignRole(targetUser.id, role.name, 'assign')}
-                                disabled={targetUser.roles.includes(role.name)}
-                                color={targetUser.roles.includes(role.name) ? "default" : "primary"}
+                                disabled={targetUser.roles && targetUser.roles.includes(role.name)}
+                                color={targetUser.roles && targetUser.roles.includes(role.name) ? "default" : "primary"}
                               >
                                 <Chip
                                   label={`@${role.name}`}
                                   size="small"
-                                  color={targetUser.roles.includes(role.name) ? "default" : "primary"}
-                                  variant={targetUser.roles.includes(role.name) ? "filled" : "outlined"}
+                                  color={targetUser.roles && targetUser.roles.includes(role.name) ? "default" : "primary"}
+                                  variant={targetUser.roles && targetUser.roles.includes(role.name) ? "filled" : "outlined"}
                                 />
                               </IconButton>
                             </Tooltip>
