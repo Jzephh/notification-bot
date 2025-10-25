@@ -573,6 +573,7 @@ export default function HomePage() {
       )}
 
       {/* Roles Grid */}
+      {user?.isAdmin ? (
       <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={3}>
         {roles.map((role) => (
           <Card key={role._id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -635,7 +636,7 @@ export default function HomePage() {
           </Card>
             ))}
           </Box>
-
+      ):(<></>)}
       {/* User Management Section for Admins */}
       {user?.isAdmin && allUsers.length > 0 && (
         <Card sx={{ mt: 4 }}>
