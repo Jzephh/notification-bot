@@ -36,10 +36,9 @@ import {
   CheckCircle as CheckIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import AdminSetup from '@/components/AdminSetup';
-import MessageMonitor from '@/components/MessageMonitor';
-import '@/lib/auto-start'; // Auto-start monitoring when server starts
 
 interface User {
   id: string;
@@ -155,7 +154,7 @@ export default function HomePage() {
     try {
       const response = await fetch('/api/notifications');
       if (response.ok) {
-        const data = await response.json();
+      const data = await response.json();
         setNotifications(data.notifications);
       } else {
         setError('Failed to fetch notifications');
@@ -368,7 +367,7 @@ export default function HomePage() {
         setSelectedRole(null);
         fetchNotifications(); // Refresh notifications for all users
       } else {
-        const data = await response.json();
+      const data = await response.json();
         setError(data.error || 'Failed to send notification');
       }
     } catch {
@@ -379,8 +378,8 @@ export default function HomePage() {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
-      </Box>
+          <CircularProgress />
+        </Box>
     );
   }
 
@@ -401,17 +400,17 @@ export default function HomePage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box display="flex" alignItems="center" gap={2}>
           <NotificationsIcon sx={{ fontSize: 40, color: 'primary.main' }} />
           <Typography variant="h3" component="h1" fontWeight="bold">
             Role Notifications
-          </Typography>
-        </Box>
+        </Typography>
+      </Box>
 
-        {user && (
+      {user && (
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar src={user.avatarUrl} sx={{ width: 40, height: 40 }}>
               {user.name.charAt(0)}
@@ -461,7 +460,7 @@ export default function HomePage() {
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" gutterBottom>
                 Your Notifications
                 {notifications.filter(n => !n.isRead).length > 0 && (
                   <Chip
@@ -484,7 +483,7 @@ export default function HomePage() {
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Notifications for roles you are assigned to:
-            </Typography>
+          </Typography>
             <Box display="flex" flexDirection="column" gap={2}>
               {notifications.map((notification) => (
                 <Card
@@ -500,12 +499,12 @@ export default function HomePage() {
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                     <Box flex={1}>
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
-                        <Chip
+            <Chip
                           label={`@${notification.roleName}`}
                           size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
+              color="primary"
+              variant="outlined"
+            />
                         {!notification.isRead && (
                           <Chip
                             label="NEW"
@@ -549,7 +548,7 @@ export default function HomePage() {
                   </Box>
                 </Card>
               ))}
-            </Box>
+        </Box>
           </CardContent>
         </Card>
       )}
@@ -591,16 +590,16 @@ export default function HomePage() {
                     </>
                   )}
                 </Box>
-              </Box>
+      </Box>
 
               <Typography variant="body2" color="text.secondary" mb={2}>
                 {role.description || 'No description'}
-              </Typography>
+            </Typography>
 
               <Box display="flex" gap={1}>
-                {user?.isAdmin && (
-                  <Button
-                    variant="contained"
+            {user?.isAdmin && (
+              <Button
+                variant="contained"
                     size="small"
                     onClick={() => {
                       setSelectedRole(role);
@@ -610,24 +609,35 @@ export default function HomePage() {
                     fullWidth
                   >
                     Send Notification
-                  </Button>
-                )}
-              </Box>
+              </Button>
+            )}
+          </Box>
             </CardContent>
           </Card>
-        ))}
-      </Box>
+            ))}
+          </Box>
 
       {/* User Management Section for Admins */}
       {user?.isAdmin && allUsers.length > 0 && (
         <Card sx={{ mt: 4 }}>
           <CardContent>
-            <Typography variant="h5" gutterBottom>
-              User Management
-            </Typography>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h5" gutterBottom>
+                User Management
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={fetchUsers}
+                startIcon={<RefreshIcon />}
+              >
+                Refresh Users
+              </Button>
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Assign roles to users. Users with roles will receive notifications when those roles are mentioned.
             </Typography>
+
 
             <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
               <Table stickyHeader>
@@ -652,7 +662,7 @@ export default function HomePage() {
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               @{targetUser.username}
-                            </Typography>
+                </Typography>
                             {targetUser.isAdmin && (
                               <Chip label="Admin" size="small" color="primary" sx={{ ml: 1 }} />
                             )}
@@ -673,9 +683,9 @@ export default function HomePage() {
                               />
                             ))
                           ) : (
-                            <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                               No roles assigned
-                            </Typography>
+                </Typography>
                           )}
                         </Box>
                       </TableCell>
@@ -705,28 +715,22 @@ export default function HomePage() {
                 </TableBody>
               </Table>
             </TableContainer>
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Message Monitoring Section for Admins */}
-      {user?.isAdmin && (
-        <Box sx={{ mt: 4 }}>
-          <MessageMonitor />
-        </Box>
-      )}
 
       {/* Create Role Button for Admins */}
       {user?.isAdmin && (
         <Box display="flex" justifyContent="center" mt={4}>
-          <Button
-            variant="contained"
+              <Button
+                variant="contained"
             size="large"
             startIcon={<AddIcon />}
             onClick={() => setCreateRoleOpen(true)}
           >
             Create New Role
-          </Button>
+              </Button>
         </Box>
       )}
 
@@ -870,6 +874,6 @@ export default function HomePage() {
           {success}
         </Alert>
       </Snackbar>
-    </Container>
+      </Container>
   );
 }
