@@ -27,44 +27,26 @@ export async function POST(request: NextRequest) {
     const { action } = await request.json();
     const manager = MonitoringManager.getInstance();
 
-    if (action === 'start') {
+    if (action === 'force-restart') {
+      // Force restart monitoring (bypass cooldown and limits)
+      await manager.forceRestart();
       const status = manager.getStatus();
-      
-      if (status.isRunning) {
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Message monitoring is already running',
-          status
-        });
-      }
-
-      await manager.startMonitoring(process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!);
-      const newStatus = manager.getStatus();
 
       return NextResponse.json({ 
         success: true, 
-        message: 'Message monitoring started successfully',
-        status: newStatus
+        message: 'Message monitoring force restarted',
+        status
       });
 
-    } else if (action === 'stop') {
+    } else if (action === 'reset-restart-attempts') {
+      // Reset restart attempts counter
+      manager.resetRestartAttempts();
       const status = manager.getStatus();
-      
-      if (!status.isRunning) {
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Message monitoring is not running',
-          status
-        });
-      }
-
-      manager.stopMonitoring();
-      const newStatus = manager.getStatus();
 
       return NextResponse.json({ 
         success: true, 
-        message: 'Message monitoring stopped successfully',
-        status: newStatus
+        message: 'Restart attempts reset',
+        status
       });
 
     } else if (action === 'clear') {
@@ -73,18 +55,8 @@ export async function POST(request: NextRequest) {
         success: true, 
         message: 'Message tracking cleared - will start fresh on next poll' 
       });
-    } else if (action === 'toggle-auto-start') {
-      const { enabled } = await request.json();
-      manager.setAutoStartEnabled(enabled);
-      const status = manager.getStatus();
-      
-      return NextResponse.json({ 
-        success: true, 
-        message: `Auto-start ${enabled ? 'enabled' : 'disabled'}`,
-        status
-      });
     } else {
-      return NextResponse.json({ error: 'Invalid action. Use "start", "stop", "clear", or "toggle-auto-start"' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid action. Use "force-restart", "reset-restart-attempts", or "clear"' }, { status: 400 });
     }
 
   } catch (error) {

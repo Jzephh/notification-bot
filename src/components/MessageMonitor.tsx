@@ -10,14 +10,15 @@ import {
   Chip,
   Alert,
   CircularProgress,
-  Switch,
-  FormControlLabel,
   Divider,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
   Chat as ChatIcon,
   Notifications as NotificationsIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 
 interface MonitorStatus {
@@ -30,6 +31,9 @@ interface MonitorStatus {
     appName: string;
   }>;
   experienceCount: number;
+  lastError?: string;
+  lastRestart?: string;
+  uptime?: number;
 }
 
 export default function MessageMonitor() {
@@ -64,8 +68,8 @@ export default function MessageMonitor() {
     }
   };
 
-  // Start monitoring
-  const startMonitoring = async () => {
+  // Force restart monitoring
+  const forceRestart = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -75,25 +79,26 @@ export default function MessageMonitor() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'start' }),
+        body: JSON.stringify({ action: 'force-restart' }),
       });
       
       const data = await response.json();
       
       if (data.success) {
         setStatus(data.status);
+        setError('✅ Monitoring force restarted successfully');
       } else {
-        setError(data.error || 'Failed to start monitoring');
+        setError(data.error || 'Failed to force restart');
       }
     } catch {
-      setError('Failed to start monitoring');
+      setError('Failed to force restart monitoring');
     } finally {
       setLoading(false);
     }
   };
 
-  // Stop monitoring
-  const stopMonitoring = async () => {
+  // Reset restart attempts
+  const resetRestartAttempts = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -103,87 +108,29 @@ export default function MessageMonitor() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ action: 'stop' }),
+        body: JSON.stringify({ action: 'reset-restart-attempts' }),
       });
       
       const data = await response.json();
       
       if (data.success) {
         setStatus(data.status);
+        setError('✅ Restart attempts reset successfully');
       } else {
-        setError(data.error || 'Failed to stop monitoring');
+        setError(data.error || 'Failed to reset restart attempts');
       }
     } catch {
-      setError('Failed to stop monitoring');
+      setError('Failed to reset restart attempts');
     } finally {
       setLoading(false);
     }
   };
 
-  // Clear message tracking
-  const clearTracking = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('/api/monitor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action: 'clear' }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setError(null);
-        // Show success message
-        setError('✅ Message tracking cleared - will start fresh on next poll');
-      } else {
-        setError(data.error || 'Failed to clear tracking');
-      }
-    } catch {
-      setError('Failed to clear tracking');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Toggle auto-start
-  const toggleAutoStart = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('/api/monitor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          action: 'toggle-auto-start',
-          enabled: !status.autoStartEnabled 
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setStatus(data.status);
-      } else {
-        setError(data.error || 'Failed to toggle auto-start');
-      }
-    } catch {
-      setError('Failed to toggle auto-start');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load status on component mount
+  // Load status on component mount and refresh every 30 seconds
   useEffect(() => {
     fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -205,8 +152,8 @@ export default function MessageMonitor() {
         </Box>
 
         <Typography variant="body2" color="text.secondary" mb={3}>
-          Monitor chat experiences for role mentions (@rolename). When admins mention roles in chat, 
-          notifications are automatically sent to users with those roles.
+          Automatic monitoring of chat experiences for role mentions (@rolename). 
+          The system runs continuously and auto-restarts if issues occur.
         </Typography>
 
         {error && (
@@ -215,67 +162,86 @@ export default function MessageMonitor() {
           </Alert>
         )}
 
+        {/* Status Display */}
         <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={status.isRunning}
-                onChange={status.isRunning ? stopMonitoring : startMonitoring}
-                disabled={loading}
-                color="primary"
-              />
-            }
-            label={
-              <Typography variant="body1">
-                {status.isRunning ? 'Monitoring Active' : 'Start Monitoring'}
-              </Typography>
-            }
-          />
-          
-          {loading && <CircularProgress size={20} />}
-        </Box>
-
-        {/* Auto-start Status and Control */}
-        <Box display="flex" alignItems="center" gap={2} mb={3}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={status.autoStartEnabled}
-                onChange={toggleAutoStart}
-                disabled={loading}
-                color="secondary"
-              />
-            }
-            label={
-              <Typography variant="body2">
-                Auto-start enabled
-              </Typography>
-            }
-          />
+          {status.isRunning ? (
+            <Chip
+              icon={<CheckCircleIcon />}
+              label="Monitoring Active"
+              color="success"
+              variant="filled"
+            />
+          ) : (
+            <Chip
+              icon={<ErrorIcon />}
+              label="Monitoring Stopped"
+              color="error"
+              variant="filled"
+            />
+          )}
           
           {status.isAutoStarted && (
             <Chip
               label="Auto-started"
-              color="success"
+              color="info"
               size="small"
               variant="outlined"
             />
           )}
+
+          {loading && <CircularProgress size={20} />}
         </Box>
 
+        {/* System Health Info */}
+        {status.lastError && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Box display="flex" alignItems="center" gap={1}>
+              <WarningIcon />
+              <Box>
+                <Typography variant="body2" fontWeight="bold">
+                  Last Error:
+                </Typography>
+                <Typography variant="body2">
+                  {status.lastError}
+                </Typography>
+                {status.lastRestart && (
+                  <Typography variant="caption" color="text.secondary">
+                    Auto-restarted: {status.lastRestart}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          </Alert>
+        )}
+
+        {status.uptime && (
+          <Box mb={2}>
+            <Typography variant="body2" color="text.secondary">
+              Uptime: {Math.floor(status.uptime / 1000 / 60)} minutes
+            </Typography>
+          </Box>
+        )}
+
+        {/* Admin Controls */}
         <Box display="flex" gap={2} mb={3}>
           <Button
             variant="outlined"
-            color="warning"
-            onClick={clearTracking}
+            color="primary"
+            onClick={forceRestart}
             disabled={loading}
             size="small"
           >
-            Clear Message Tracking
+            Force Restart
           </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-            Reset tracking to start fresh (useful after server restart)
-          </Typography>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={resetRestartAttempts}
+            disabled={loading}
+            size="small"
+          >
+            Reset Attempts
+          </Button>
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -310,10 +276,11 @@ export default function MessageMonitor() {
           </Typography>
           <Typography variant="body2" color="text.secondary" component="div">
             <ul style={{ margin: 0, paddingLeft: '20px' }}>
-              <li>Admins can mention roles in chat using @rolename</li>
-              <li>System automatically detects these mentions</li>
-              <li>Notifications are sent to all users with the mentioned role</li>
+              <li>System automatically starts when the server starts</li>
+              <li>Continuously monitors all chat experiences for @rolename mentions</li>
+              <li>Auto-restarts if monitoring stops due to errors</li>
               <li>Only admins can trigger role notifications</li>
+              <li>No manual intervention required</li>
             </ul>
           </Typography>
         </Box>
@@ -323,7 +290,18 @@ export default function MessageMonitor() {
             <Box display="flex" alignItems="center" gap={1}>
               <NotificationsIcon />
               <Typography variant="body2">
-                Monitoring is active. Role mentions in chat will trigger notifications.
+                Monitoring is active and will continue running automatically.
+              </Typography>
+            </Box>
+          </Alert>
+        )}
+
+        {!status.isRunning && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Box display="flex" alignItems="center" gap={1}>
+              <WarningIcon />
+              <Typography variant="body2">
+                Monitoring is not running. The system will attempt to restart automatically.
               </Typography>
             </Box>
           </Alert>

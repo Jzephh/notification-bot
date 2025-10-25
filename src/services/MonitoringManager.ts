@@ -1,13 +1,22 @@
 import { MessageMonitorService } from './MessageMonitorService';
 
 /**
- * Global monitoring manager that handles auto-start and manual control
+ * Global monitoring manager that handles auto-start, auto-restart, and health monitoring
  */
 class MonitoringManager {
   private static instance: MonitoringManager | null = null;
   private messageMonitor: MessageMonitorService | null = null;
   private isAutoStarted: boolean = false;
   private autoStartEnabled: boolean = true;
+  private companyId: string = '';
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private startTime: number = 0;
+  private lastError: string | null = null;
+  private lastRestart: string | null = null;
+  private restartAttempts: number = 0;
+  private maxRestartAttempts: number = 5;
+  private restartCooldown: number = 30000; // 30 seconds
+  private lastRestartAttempt: number = 0;
 
   private constructor() {}
 
@@ -32,15 +41,30 @@ class MonitoringManager {
       return;
     }
 
+    this.companyId = companyId;
+    await this.startMonitoringInternal();
+    this.startHealthCheck();
+  }
+
+  /**
+   * Internal method to start monitoring with error handling
+   */
+  private async startMonitoringInternal(): Promise<void> {
     try {
-      console.log('🚀 Auto-starting message monitoring...');
-      this.messageMonitor = new MessageMonitorService(companyId);
+      console.log('🚀 Starting message monitoring...');
+      this.messageMonitor = new MessageMonitorService(this.companyId);
       await this.messageMonitor.start();
       this.isAutoStarted = true;
-      console.log('✅ Message monitoring auto-started successfully');
+      this.startTime = Date.now();
+      this.lastError = null;
+      this.restartAttempts = 0;
+      console.log('✅ Message monitoring started successfully');
     } catch (error) {
-      console.error('❌ Failed to auto-start message monitoring:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.lastError = errorMessage;
+      console.error('❌ Failed to start message monitoring:', error);
       this.isAutoStarted = false;
+      throw error;
     }
   }
 
@@ -52,39 +76,101 @@ class MonitoringManager {
   }
 
   /**
-   * Manually start monitoring (override auto-start)
+   * Start health check monitoring
    */
-  async startMonitoring(companyId: string): Promise<void> {
-    if (this.messageMonitor && this.messageMonitor.getStatus().isRunning) {
-      console.log('⚠️ Monitoring is already running');
+  private startHealthCheck(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+    }
+
+    // Check health every 30 seconds
+    this.healthCheckInterval = setInterval(() => {
+      this.performHealthCheck().catch(console.error);
+    }, 30000);
+
+    console.log('🔍 Health check started - monitoring every 30 seconds');
+  }
+
+  /**
+   * Perform health check and auto-restart if needed
+   */
+  private async performHealthCheck(): Promise<void> {
+    if (!this.messageMonitor) {
+      console.log('⚠️ No message monitor instance found, attempting restart...');
+      await this.attemptRestart();
       return;
     }
 
-    try {
-      this.messageMonitor = new MessageMonitorService(companyId);
-      await this.messageMonitor.start();
-      this.isAutoStarted = true;
-      console.log('✅ Message monitoring started manually');
-    } catch (error) {
-      console.error('❌ Failed to start monitoring:', error);
-      throw error;
+    const status = this.messageMonitor.getStatus();
+    if (!status.isRunning) {
+      console.log('⚠️ Message monitoring is not running, attempting restart...');
+      await this.attemptRestart();
     }
   }
 
   /**
-   * Stop monitoring
+   * Attempt to restart monitoring with cooldown and retry limits
+   */
+  private async attemptRestart(): Promise<void> {
+    const now = Date.now();
+    
+    // Check cooldown period
+    if (now - this.lastRestartAttempt < this.restartCooldown) {
+      console.log('⏳ Restart cooldown active, skipping restart attempt');
+      return;
+    }
+
+    // Check max restart attempts
+    if (this.restartAttempts >= this.maxRestartAttempts) {
+      console.error('❌ Max restart attempts reached, stopping auto-restart');
+      this.lastError = `Max restart attempts (${this.maxRestartAttempts}) reached`;
+      return;
+    }
+
+    this.lastRestartAttempt = now;
+    this.restartAttempts++;
+
+    try {
+      console.log(`🔄 Attempting restart #${this.restartAttempts}...`);
+      
+      // Stop existing monitor if any
+      if (this.messageMonitor) {
+        this.messageMonitor.stop();
+        this.messageMonitor = null;
+      }
+
+      // Start fresh
+      await this.startMonitoringInternal();
+      this.lastRestart = new Date().toISOString();
+      console.log('✅ Monitoring restarted successfully');
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.lastError = `Restart attempt ${this.restartAttempts} failed: ${errorMessage}`;
+      console.error(`❌ Restart attempt ${this.restartAttempts} failed:`, error);
+    }
+  }
+
+  /**
+   * Stop monitoring and health checks
    */
   stopMonitoring(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+    }
+
     if (this.messageMonitor) {
       this.messageMonitor.stop();
       this.messageMonitor = null;
-      this.isAutoStarted = false;
-      console.log('🛑 Message monitoring stopped');
     }
+    
+    this.isAutoStarted = false;
+    console.log('🛑 Message monitoring and health checks stopped');
   }
 
   /**
-   * Get monitoring status
+   * Get monitoring status with health information
    */
   getStatus(): {
     isRunning: boolean;
@@ -92,6 +178,10 @@ class MonitoringManager {
     autoStartEnabled: boolean;
     chatExperiences: Array<{ id: string; name: string; appName: string }>;
     experienceCount: number;
+    lastError?: string;
+    lastRestart?: string;
+    uptime?: number;
+    restartAttempts: number;
   } {
     const monitorStatus = this.messageMonitor ? this.messageMonitor.getStatus() : {
       isRunning: false,
@@ -99,10 +189,16 @@ class MonitoringManager {
       experienceCount: 0
     };
 
+    const uptime = this.startTime > 0 ? Date.now() - this.startTime : 0;
+
     return {
       ...monitorStatus,
       isAutoStarted: this.isAutoStarted,
-      autoStartEnabled: this.autoStartEnabled
+      autoStartEnabled: this.autoStartEnabled,
+      lastError: this.lastError || undefined,
+      lastRestart: this.lastRestart || undefined,
+      uptime: uptime > 0 ? uptime : undefined,
+      restartAttempts: this.restartAttempts
     };
   }
 
@@ -116,18 +212,22 @@ class MonitoringManager {
   }
 
   /**
-   * Enable/disable auto-start
+   * Reset restart attempts (useful for manual intervention)
    */
-  setAutoStartEnabled(enabled: boolean): void {
-    this.autoStartEnabled = enabled;
-    console.log(`📡 Auto-start ${enabled ? 'enabled' : 'disabled'}`);
+  resetRestartAttempts(): void {
+    this.restartAttempts = 0;
+    this.lastError = null;
+    console.log('🔄 Restart attempts reset');
   }
 
   /**
-   * Check if auto-start is enabled
+   * Force restart monitoring (bypass cooldown and limits)
    */
-  isAutoStartEnabled(): boolean {
-    return this.autoStartEnabled;
+  async forceRestart(): Promise<void> {
+    console.log('🔄 Force restart requested...');
+    this.restartAttempts = 0;
+    this.lastRestartAttempt = 0;
+    await this.attemptRestart();
   }
 }
 

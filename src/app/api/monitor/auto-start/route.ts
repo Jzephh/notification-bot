@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import MonitoringManager from '@/services/MonitoringManager';
 
 /**
  * Auto-start endpoint - called when server starts
  * This ensures monitoring starts automatically
  */
-export async function POST(_request: NextRequest) {
+export async function POST() {
   try {
     const companyId = process.env.NEXT_PUBLIC_WHOP_COMPANY_ID;
     

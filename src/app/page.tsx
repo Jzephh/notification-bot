@@ -75,18 +75,18 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Dialog states
   const [createRoleOpen, setCreateRoleOpen] = useState(false);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  
+
   // Form states
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
   const [newRoleColor, setNewRoleColor] = useState('#1976d2');
   const [notificationMessage, setNotificationMessage] = useState('');
-  
+
   // Role editing states
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [editRoleName, setEditRoleName] = useState('');
@@ -155,7 +155,7 @@ export default function HomePage() {
     try {
       const response = await fetch('/api/notifications');
       if (response.ok) {
-      const data = await response.json();
+        const data = await response.json();
         setNotifications(data.notifications);
       } else {
         setError('Failed to fetch notifications');
@@ -178,9 +178,9 @@ export default function HomePage() {
 
       if (response.ok) {
         // Update local state to mark as read
-        setNotifications(prev => 
-          prev.map(notif => 
-            notif.id === notificationId 
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif.id === notificationId
               ? { ...notif, isRead: true }
               : notif
           )
@@ -204,7 +204,7 @@ export default function HomePage() {
 
       if (response.ok) {
         // Update local state to mark all as read
-        setNotifications(prev => 
+        setNotifications(prev =>
           prev.map(notif => ({ ...notif, isRead: true }))
         );
         setSuccess('All notifications marked as read');
@@ -368,7 +368,7 @@ export default function HomePage() {
         setSelectedRole(null);
         fetchNotifications(); // Refresh notifications for all users
       } else {
-      const data = await response.json();
+        const data = await response.json();
         setError(data.error || 'Failed to send notification');
       }
     } catch {
@@ -379,8 +379,8 @@ export default function HomePage() {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-          <CircularProgress />
-        </Box>
+        <CircularProgress />
+      </Box>
     );
   }
 
@@ -401,17 +401,17 @@ export default function HomePage() {
   }
 
   return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box display="flex" alignItems="center" gap={2}>
           <NotificationsIcon sx={{ fontSize: 40, color: 'primary.main' }} />
           <Typography variant="h3" component="h1" fontWeight="bold">
             Role Notifications
-        </Typography>
-      </Box>
+          </Typography>
+        </Box>
 
-      {user && (
+        {user && (
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar src={user.avatarUrl} sx={{ width: 40, height: 40 }}>
               {user.name.charAt(0)}
@@ -464,7 +464,7 @@ export default function HomePage() {
               <Typography variant="h6" gutterBottom>
                 Your Notifications
                 {notifications.filter(n => !n.isRead).length > 0 && (
-                  <Chip 
+                  <Chip
                     label={`${notifications.filter(n => !n.isRead).length} unread`}
                     color="error"
                     size="small"
@@ -487,10 +487,10 @@ export default function HomePage() {
             </Typography>
             <Box display="flex" flexDirection="column" gap={2}>
               {notifications.map((notification) => (
-                <Card 
-                  key={notification.id} 
-                  variant="outlined" 
-                  sx={{ 
+                <Card
+                  key={notification.id}
+                  variant="outlined"
+                  sx={{
                     p: 2,
                     borderLeft: notification.isRead ? 'none' : '4px solid',
                     borderLeftColor: 'primary.main',
@@ -501,8 +501,8 @@ export default function HomePage() {
                     <Box flex={1}>
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
                         <Chip
-                          label={`@${notification.roleName}`} 
-                          size="small" 
+                          label={`@${notification.roleName}`}
+                          size="small"
                           color="primary"
                           variant="outlined"
                         />
@@ -518,9 +518,9 @@ export default function HomePage() {
                           {new Date(notification.createdAt).toLocaleString()}
                         </Typography>
                       </Box>
-                      <Typography 
+                      <Typography
                         variant="body1"
-                        sx={{ 
+                        sx={{
                           fontWeight: notification.isRead ? 'normal' : 'bold'
                         }}
                       >
@@ -558,65 +558,65 @@ export default function HomePage() {
       <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={3}>
         {roles.map((role) => (
           <Card key={role._id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Chip
-                    label={`@${role.name}`}
-                    sx={{ 
-                      backgroundColor: role.color,
-                      color: 'white',
-                      fontWeight: 'bold'
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Chip
+                  label={`@${role.name}`}
+                  sx={{
+                    backgroundColor: role.color,
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }}
+                />
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Typography variant="body2" color="text.secondary">
+                    Role
+                  </Typography>
+                  {user?.isAdmin && (
+                    <>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditRole(role)}
+                        color="primary"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteRole(role._id)}
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                {role.description || 'No description'}
+              </Typography>
+
+              <Box display="flex" gap={1}>
+                {user?.isAdmin && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      setSelectedRole(role);
+                      setNotifyDialogOpen(true);
                     }}
-                  />
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="body2" color="text.secondary">
-                      Role
-                    </Typography>
-                    {user?.isAdmin && (
-                      <>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEditRole(role)}
-                          color="primary"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteRole(role._id)}
-                          color="error"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </>
-                    )}
-                  </Box>
+                    startIcon={<SendIcon />}
+                    fullWidth
+                  >
+                    Send Notification
+                  </Button>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
       </Box>
-
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  {role.description || 'No description'}
-            </Typography>
-
-                <Box display="flex" gap={1}>
-            {user?.isAdmin && (
-              <Button
-                variant="contained"
-                      size="small"
-                      onClick={() => {
-                        setSelectedRole(role);
-                        setNotifyDialogOpen(true);
-                      }}
-                      startIcon={<SendIcon />}
-                      fullWidth
-                    >
-                      Send Notification
-              </Button>
-            )}
-          </Box>
-              </CardContent>
-            </Card>
-            ))}
-          </Box>
 
       {/* User Management Section for Admins */}
       {user?.isAdmin && allUsers.length > 0 && (
@@ -628,7 +628,7 @@ export default function HomePage() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Assign roles to users. Users with roles will receive notifications when those roles are mentioned.
             </Typography>
-            
+
             <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
               <Table stickyHeader>
                 <TableHead>
@@ -652,7 +652,7 @@ export default function HomePage() {
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                               @{targetUser.username}
-                </Typography>
+                            </Typography>
                             {targetUser.isAdmin && (
                               <Chip label="Admin" size="small" color="primary" sx={{ ml: 1 }} />
                             )}
@@ -673,9 +673,9 @@ export default function HomePage() {
                               />
                             ))
                           ) : (
-                <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary">
                               No roles assigned
-                </Typography>
+                            </Typography>
                           )}
                         </Box>
                       </TableCell>
@@ -705,9 +705,9 @@ export default function HomePage() {
                 </TableBody>
               </Table>
             </TableContainer>
-              </CardContent>
-            </Card>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Message Monitoring Section for Admins */}
       {user?.isAdmin && (
@@ -719,14 +719,14 @@ export default function HomePage() {
       {/* Create Role Button for Admins */}
       {user?.isAdmin && (
         <Box display="flex" justifyContent="center" mt={4}>
-              <Button
-                variant="contained"
+          <Button
+            variant="contained"
             size="large"
             startIcon={<AddIcon />}
             onClick={() => setCreateRoleOpen(true)}
           >
             Create New Role
-              </Button>
+          </Button>
         </Box>
       )}
 
@@ -797,8 +797,8 @@ export default function HomePage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setNotifyDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSendNotification} 
+          <Button
+            onClick={handleSendNotification}
             variant="contained"
             disabled={!notificationMessage.trim()}
           >
@@ -870,6 +870,6 @@ export default function HomePage() {
           {success}
         </Alert>
       </Snackbar>
-      </Container>
+    </Container>
   );
 }
