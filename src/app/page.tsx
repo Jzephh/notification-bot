@@ -66,11 +66,25 @@ interface Notification {
   isRead: boolean;
 }
 
+interface RoleRequest {
+  _id: string;
+  userId: string;
+  username: string;
+  roleName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedBy: string;
+  handledBy?: string;
+  handledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [roleRequests, setRoleRequests] = useState<RoleRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -78,7 +92,9 @@ export default function HomePage() {
   // Dialog states
   const [createRoleOpen, setCreateRoleOpen] = useState(false);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
+  const [requestRoleDialogOpen, setRequestRoleDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedRoleForRequest, setSelectedRoleForRequest] = useState<Role | null>(null);
 
   // Form states
   const [newRoleName, setNewRoleName] = useState('');
@@ -100,10 +116,12 @@ export default function HomePage() {
     if (user) {
       fetchRoles();
       fetchNotifications();
+      fetchRoleRequests();
       if (user.isAdmin) {
         fetchUsers();
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchUser = async () => {
@@ -163,6 +181,21 @@ export default function HomePage() {
         setNotifications(data.notifications);
       } else {
         setError('Failed to fetch notifications');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  const fetchRoleRequests = async () => {
+    try {
+      const filter = user?.isAdmin ? 'all' : 'my';
+      const response = await fetch(`/api/role-requests?filter=${filter}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRoleRequests(data.requests);
+      } else {
+        setError('Failed to fetch role requests');
       }
     } catch {
       setError('Network error');
@@ -266,6 +299,59 @@ export default function HomePage() {
       } else {
         const data = await response.json();
         setError(data.error || `Failed to ${action} role`);
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  const handleRequestRole = async () => {
+    if (!selectedRoleForRequest) return;
+
+    try {
+      const response = await fetch('/api/role-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roleName: selectedRoleForRequest.name
+        })
+      });
+
+      if (response.ok) {
+        setSuccess(`Request submitted for @${selectedRoleForRequest.name}`);
+        setRequestRoleDialogOpen(false);
+        setSelectedRoleForRequest(null);
+        fetchRoleRequests();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to submit role request');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  const handleApproveRejectRequest = async (requestId: string, action: 'approve' | 'reject') => {
+    try {
+      const response = await fetch('/api/role-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId,
+          action
+        })
+      });
+
+      if (response.ok) {
+        setSuccess(`Request ${action === 'approve' ? 'approved' : 'rejected'}`);
+        fetchRoleRequests();
+        if (user?.isAdmin) {
+          fetchUsers(); // Refresh users list
+        }
+        fetchUser(); // Refresh current user
+      } else {
+        const data = await response.json();
+        setError(data.error || `Failed to ${action} request`);
       }
     } catch {
       setError('Network error');
@@ -468,8 +554,49 @@ export default function HomePage() {
               Your Assigned Roles
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              You don&apos;t have any roles assigned. Contact an admin to assign roles to you.
+              You don&apos;t have any roles assigned. Request roles below.
             </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Request Role Section */}
+      {roles.length > 0 && (
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Request a Role
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Select a role you&apos;d like to have assigned. Admins will review your request.
+            </Typography>
+            <Box display="flex" flexWrap="wrap" gap={2}>
+              {roles
+                .filter(role => !user?.roles?.includes(role.name))
+                .map((role) => {
+                  const hasPendingRequest = roleRequests.some(
+                    req => req.roleName === role.name && req.status === 'pending' && req.userId === user?.id
+                  );
+                  const isApproved = roleRequests.some(
+                    req => req.roleName === role.name && req.status === 'approved' && req.userId === user?.id
+                  );
+                  return (
+                    <Button
+                      key={role._id}
+                      variant="outlined"
+                      startIcon={<AddIcon />}
+                      onClick={() => {
+                        setSelectedRoleForRequest(role);
+                        setRequestRoleDialogOpen(true);
+                      }}
+                      disabled={hasPendingRequest || isApproved}
+                      sx={{ minWidth: 150 }}
+                    >
+                      {hasPendingRequest ? 'Pending...' : isApproved ? 'Approved' : `Request @${role.name}`}
+                    </Button>
+                  );
+                })}
+            </Box>
           </CardContent>
         </Card>
       )}
@@ -637,6 +764,77 @@ export default function HomePage() {
             ))}
           </Box>
       ):(<></>)}
+
+      {/* Role Requests Section for Admins */}
+      {user?.isAdmin && roleRequests.filter(req => req.status === 'pending').length > 0 && (
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Typography variant="h5" gutterBottom>
+              Pending Role Requests
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Review and approve or reject role requests from users.
+            </Typography>
+
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User</TableCell>
+                    <TableCell>Requested Role</TableCell>
+                    <TableCell>Requested On</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {roleRequests
+                    .filter(req => req.status === 'pending')
+                    .map((request) => (
+                      <TableRow key={request._id}>
+                        <TableCell>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {request.username}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={`@${request.roleName}`} color="primary" variant="outlined" />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {new Date(request.createdAt).toLocaleDateString()}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Box display="flex" gap={1}>
+                            <Button
+                              variant="contained"
+                              color="success"
+                              size="small"
+                              onClick={() => handleApproveRejectRequest(request._id, 'approve')}
+                              startIcon={<CheckIcon />}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              onClick={() => handleApproveRejectRequest(request._id, 'reject')}
+                              startIcon={<DeleteIcon />}
+                            >
+                              Reject
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {/* User Management Section for Admins */}
       {user?.isAdmin && allUsers.length > 0 && (
         <Card sx={{ mt: 4 }}>
@@ -655,7 +853,7 @@ export default function HomePage() {
               </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Assign roles to users. Users with roles will receive notifications when those roles are mentioned.
+              Assign roles that users have requested. Users must submit a request before you can assign them a role.
             </Typography>
 
 
@@ -711,23 +909,41 @@ export default function HomePage() {
                       </TableCell>
                       <TableCell>
                         <Box display="flex" flexWrap="wrap" gap={0.5}>
-                          {roles.map((role) => (
-                            <Tooltip key={role._id} title={`Assign @${role.name} to ${targetUser.name}`}>
-                              <IconButton
-                                size="small"
-                                onClick={() => handleAssignRole(targetUser.id, role.name, 'assign')}
-                                disabled={targetUser.roles && targetUser.roles.includes(role.name)}
-                                color={targetUser.roles && targetUser.roles.includes(role.name) ? "default" : "primary"}
-                              >
-                                <Chip
-                                  label={`@${role.name}`}
+                          {(() => {
+                            // Get requested roles for this user
+                            const requestedRoles = roleRequests
+                              .filter(req => req.userId === targetUser.id && req.status === 'approved')
+                              .map(req => req.roleName);
+                            
+                            // Filter to show only requested roles
+                            const availableRoles = roles.filter(role => requestedRoles.includes(role.name));
+                            
+                            if (availableRoles.length === 0) {
+                              return (
+                                <Typography variant="body2" color="text.secondary">
+                                  No requested roles
+                                </Typography>
+                              );
+                            }
+                            
+                            return availableRoles.map((role) => (
+                              <Tooltip key={role._id} title={`Assign @${role.name} to ${targetUser.name}`}>
+                                <IconButton
                                   size="small"
+                                  onClick={() => handleAssignRole(targetUser.id, role.name, 'assign')}
+                                  disabled={targetUser.roles && targetUser.roles.includes(role.name)}
                                   color={targetUser.roles && targetUser.roles.includes(role.name) ? "default" : "primary"}
-                                  variant={targetUser.roles && targetUser.roles.includes(role.name) ? "filled" : "outlined"}
-                                />
-                              </IconButton>
-                            </Tooltip>
-                          ))}
+                                >
+                                  <Chip
+                                    label={`@${role.name}`}
+                                    size="small"
+                                    color={targetUser.roles && targetUser.roles.includes(role.name) ? "default" : "primary"}
+                                    variant={targetUser.roles && targetUser.roles.includes(role.name) ? "filled" : "outlined"}
+                                  />
+                                </IconButton>
+                              </Tooltip>
+                            ));
+                          })()}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -871,6 +1087,30 @@ export default function HomePage() {
         <DialogActions>
           <Button onClick={() => setEditingRole(null)}>Cancel</Button>
           <Button onClick={handleUpdateRole} variant="contained">Update Role</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Request Role Dialog */}
+      <Dialog open={requestRoleDialogOpen} onClose={() => setRequestRoleDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Request Role: @{selectedRoleForRequest?.name}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom sx={{ mt: 1 }}>
+            You are requesting the role <strong>@{selectedRoleForRequest?.name}</strong>.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            An admin will review your request and notify you once it has been processed.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRequestRoleDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleRequestRole}
+            variant="contained"
+          >
+            Submit Request
+          </Button>
         </DialogActions>
       </Dialog>
 
