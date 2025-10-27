@@ -910,7 +910,10 @@ export default function HomePage() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => fetchUsers()}
+                onClick={() => {
+                  fetchUsers();
+                  fetchRoleRequests();
+                }}
                 startIcon={<RefreshIcon />}
               >
                 Refresh Users
