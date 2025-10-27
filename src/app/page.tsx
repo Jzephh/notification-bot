@@ -869,57 +869,31 @@ export default function HomePage() {
               Notification Channel Configuration
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Select the channel where role notifications will be sent when admins mention roles.
+              Select a chat channel where role notifications will be sent.
             </Typography>
 
-            {/* Filter and Channel Selection */}
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Box display="flex" alignItems="center" gap={2}>
-                <FormControl sx={{ minWidth: 150 }}>
-                  <InputLabel>Filter Type</InputLabel>
-                  <Select
-                    value="chat"
-                    onChange={(e) => fetchExperiences(e.target.value)}
-                    label="Filter Type"
-                  >
-                    <MenuItem value="chat">Chat Apps Only</MenuItem>
-                    <MenuItem value="app">Other Apps</MenuItem>
-                    <MenuItem value="all">All Experiences</MenuItem>
-                  </Select>
-                </FormControl>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => fetchExperiences('chat')}
-                  startIcon={<RefreshIcon />}
+            <Box display="flex" alignItems="center" gap={2}>
+              <FormControl fullWidth>
+                <InputLabel>Select Chat Channel</InputLabel>
+                <Select
+                  value={notificationSettings?.experienceId || ''}
+                  onChange={(e) => handleSaveExperience(e.target.value)}
+                  label="Select Chat Channel"
                 >
-                  Refresh
-                </Button>
-              </Box>
-
-              <Box display="flex" alignItems="center" gap={2}>
-                <FormControl fullWidth>
-                  <InputLabel>Select Notification Channel</InputLabel>
-                  <Select
-                    value={notificationSettings?.experienceId || ''}
-                    onChange={(e) => handleSaveExperience(e.target.value)}
-                    label="Select Notification Channel"
-                  >
-                    {experiences.map((exp) => (
-                      <MenuItem key={exp.id} value={exp.id}>
-                        {exp.name} ({exp.type})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                {notificationSettings && (
-                  <Chip
-                    label={`Configured: ${notificationSettings.experienceName}`}
-                    color="success"
-                    variant="outlined"
-                  />
-                )}
-              </Box>
+                  {experiences.map((exp) => (
+                    <MenuItem key={exp.id} value={exp.id}>
+                      {exp.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {notificationSettings && (
+                <Chip
+                  label={`Configured: ${notificationSettings.experienceName}`}
+                  color="success"
+                  variant="outlined"
+                />
+              )}
             </Box>
           </CardContent>
         </Card>
