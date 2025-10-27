@@ -88,6 +88,16 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Pagination states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  });
 
   // Dialog states
   const [createRoleOpen, setCreateRoleOpen] = useState(false);
@@ -159,12 +169,18 @@ export default function HomePage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (search = searchQuery, page = currentPage) => {
     try {
-      const response = await fetch('/api/users');
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      params.append('page', page.toString());
+      params.append('limit', '10');
+      
+      const response = await fetch(`/api/users?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
         setAllUsers(data.users);
+        setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 1 });
       } else {
         setError('Failed to fetch users');
       }
@@ -765,76 +781,6 @@ export default function HomePage() {
           </Box>
       ):(<></>)}
 
-      {/* Role Requests Section for Admins */}
-      {user?.isAdmin && roleRequests.filter(req => req.status === 'pending').length > 0 && (
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              Pending Role Requests
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Review and approve or reject role requests from users.
-            </Typography>
-
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>User</TableCell>
-                    <TableCell>Requested Role</TableCell>
-                    <TableCell>Requested On</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {roleRequests
-                    .filter(req => req.status === 'pending')
-                    .map((request) => (
-                      <TableRow key={request._id}>
-                        <TableCell>
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            {request.username}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={`@${request.roleName}`} color="primary" variant="outlined" />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box display="flex" gap={1}>
-                            <Button
-                              variant="contained"
-                              color="success"
-                              size="small"
-                              onClick={() => handleApproveRejectRequest(request._id, 'approve')}
-                              startIcon={<CheckIcon />}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              color="error"
-                              size="small"
-                              onClick={() => handleApproveRejectRequest(request._id, 'reject')}
-                              startIcon={<DeleteIcon />}
-                            >
-                              Reject
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
-      )}
-
       {/* User Management Section for Admins */}
       {user?.isAdmin && allUsers.length > 0 && (
         <Card sx={{ mt: 4 }}>
@@ -846,7 +792,7 @@ export default function HomePage() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={fetchUsers}
+                onClick={() => fetchUsers()}
                 startIcon={<RefreshIcon />}
               >
                 Refresh Users
@@ -856,6 +802,70 @@ export default function HomePage() {
               Assign roles that users have requested. Users must submit a request before you can assign them a role.
             </Typography>
 
+            {/* Search and Pagination Controls */}
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} gap={2}>
+              <TextField
+                placeholder="Search users by name or username..."
+                size="small"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    fetchUsers(searchQuery, 1);
+                  }
+                }}
+                sx={{ flexGrow: 1 }}
+              />
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => fetchUsers(searchQuery, currentPage)}
+                startIcon={<RefreshIcon />}
+              >
+                Search
+              </Button>
+            </Box>
+
+            {/* Pagination Info and Controls */}
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="body2" color="text.secondary">
+                Showing {allUsers.length} of {pagination.total} users
+              </Typography>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    if (currentPage > 1) {
+                      setCurrentPage(currentPage - 1);
+                      fetchUsers(searchQuery, currentPage - 1);
+                    }
+                  }}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Typography variant="body2">
+                  Page {pagination.page} of {pagination.totalPages}
+                </Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => {
+                    if (currentPage < pagination.totalPages) {
+                      setCurrentPage(currentPage + 1);
+                      fetchUsers(searchQuery, currentPage + 1);
+                    }
+                  }}
+                  disabled={currentPage >= pagination.totalPages}
+                >
+                  Next
+                </Button>
+              </Box>
+            </Box>
 
             <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
               <Table stickyHeader>
@@ -863,7 +873,8 @@ export default function HomePage() {
                   <TableRow>
                     <TableCell>User</TableCell>
                     <TableCell>Current Roles</TableCell>
-                    <TableCell>Actions</TableCell>
+                    <TableCell>Pending Requests</TableCell>
+                    <TableCell>Assign Roles</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -905,6 +916,52 @@ export default function HomePage() {
                               No roles assigned
                 </Typography>
                           )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" flexDirection="column" gap={1}>
+                          {(() => {
+                            // Get pending requests for this user
+                            const pendingRequests = roleRequests
+                              .filter(req => req.userId === targetUser.id && req.status === 'pending');
+                            
+                            if (pendingRequests.length === 0) {
+                              return (
+                                <Typography variant="body2" color="text.secondary">
+                                  No pending requests
+                                </Typography>
+                              );
+                            }
+                            
+                            return pendingRequests.map((request) => (
+                              <Box key={request._id} display="flex" alignItems="center" gap={1}>
+                                <Chip 
+                                  label={`@${request.roleName}`} 
+                                  size="small" 
+                                  color="warning" 
+                                  variant="outlined" 
+                                />
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  color="success"
+                                  onClick={() => handleApproveRejectRequest(request._id, 'approve')}
+                                  sx={{ minWidth: 70 }}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  onClick={() => handleApproveRejectRequest(request._id, 'reject')}
+                                  sx={{ minWidth: 70 }}
+                                >
+                                  Reject
+                                </Button>
+                              </Box>
+                            ));
+                          })()}
                         </Box>
                       </TableCell>
                       <TableCell>
