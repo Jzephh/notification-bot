@@ -42,7 +42,6 @@ export async function GET(request: NextRequest) {
       }))
     });
   } catch (error) {
-    console.error('Get notifications error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -89,7 +88,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
-    console.error('Delete notification error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -146,7 +144,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid action. Use "mark-read" or "mark-all-read"' }, { status: 400 });
     }
   } catch (error) {
-    console.error('Mark notification error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

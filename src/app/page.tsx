@@ -246,7 +246,6 @@ export default function HomePage() {
       if (response.ok) {
         const data = await response.json();
         setExperiences(data.experiences || []);
-        console.log(`Found ${data.total} ${filterType} experiences out of ${data.totalAll} total`);
       } else {
         setError('Failed to fetch experiences');
       }

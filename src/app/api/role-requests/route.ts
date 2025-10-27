@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ requests });
   } catch (error) {
-    console.error('Get role requests error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -108,7 +107,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ request: roleRequest, message: 'Role request submitted successfully' });
     } catch (error) {
-      console.error('Create role request error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -185,7 +183,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid action. Use "approve" or "reject"' }, { status: 400 });
     }
     } catch (error) {
-      console.error('Handle role request error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }

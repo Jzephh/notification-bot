@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
       roles: createdRoles
     });
   } catch (error) {
-    console.error('Create sample roles error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ roles });
   } catch (error) {
-    console.error('Get roles error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -64,7 +63,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ role });
   } catch (error: unknown) {
-    console.error('Create role error:', error);
     if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
       return NextResponse.json({ error: 'Role already exists' }, { status: 400 });
     }
@@ -116,7 +114,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ role });
   } catch (error: unknown) {
-    console.error('Update role error:', error);
     if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
       return NextResponse.json({ error: 'Role name already exists' }, { status: 400 });
     }
@@ -176,7 +173,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Role deleted successfully' });
   } catch (error) {
-    console.error('Delete role error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

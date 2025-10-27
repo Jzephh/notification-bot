@@ -112,7 +112,6 @@ export async function POST(request: NextRequest) {
       roleName: roleNameLower
     });
   } catch (error) {
-    console.error('Assign role error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

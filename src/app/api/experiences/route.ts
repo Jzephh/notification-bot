@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
 
     // Fetch all pages with pagination
     while (hasNextPage) {
-      const response = await sdk.experiences.list({
-        company_id: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID || '',
+      const response = await sdk.experiences.listExperiences({
+        companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID || '',
         ...(endCursor && { after: endCursor })
       }) as WhopResponse;
 
@@ -81,7 +81,6 @@ export async function GET(request: NextRequest) {
       totalAll: allExperiences.length
     });
   } catch (error) {
-    console.error('Get experiences error:', error);
     return NextResponse.json({ error: 'Failed to fetch experiences' }, { status: 500 });
   }
 }
