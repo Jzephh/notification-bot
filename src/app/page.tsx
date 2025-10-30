@@ -919,7 +919,7 @@ export default function HomePage() {
       ):(<></>)}
 
       {/* Notification Channel Configuration for Admins (Admin Tab 4) */}
-      {user?.isAdmin && adminTab === 4 && experiences.length > 0 && (
+      {user?.isAdmin && adminTab === 3 && experiences.length > 0 && (
         <Card sx={{ mt: 4 }}>
           <CardContent>
             <Typography variant="h5" gutterBottom>
@@ -957,7 +957,7 @@ export default function HomePage() {
       )}
 
       {/* User Management Section for Admins (Admin Tab 2) */}
-      {user?.isAdmin && adminTab === 2 && allUsers.length > 0 && (
+      {user?.isAdmin && adminTab === 1 && allUsers.length > 0 && (
         <Card sx={{ mt: 4 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -1207,7 +1207,7 @@ export default function HomePage() {
       )}
 
       {/* Whop Members (Admin Tab 3) */}
-      {user?.isAdmin && adminTab === 3 && (
+      {user?.isAdmin && adminTab === 2 && (
         <Card sx={{ mt: 4 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
