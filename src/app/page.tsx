@@ -32,6 +32,7 @@ import {
   FormControl,
   InputLabel
 } from '@mui/material';
+import { Tabs, Tab } from '@mui/material';
 import {
   Add as AddIcon,
   Notifications as NotificationsIcon,
@@ -138,6 +139,14 @@ export default function HomePage() {
   const [editRoleDescription, setEditRoleDescription] = useState('');
   const [editRoleColor, setEditRoleColor] = useState('#1976d2');
 
+  // Admin tabs and Whop members
+  const [adminTab, setAdminTab] = useState(0);
+  const [whopMembers, setWhopMembers] = useState<(User & { email?: string })[]>([]);
+  const [whopSearch, setWhopSearch] = useState('');
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteUserId, setInviteUserId] = useState('');
+  const [inviting, setInviting] = useState(false);
+
   useEffect(() => {
     fetchUser();
   }, []);
@@ -222,6 +231,52 @@ export default function HomePage() {
       }
     } catch {
       setError('Network error');
+    }
+  };
+
+  const fetchWhopMembers = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (whopSearch) params.append('search', whopSearch);
+      const response = await fetch(`/api/admin/whop-users?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setWhopMembers(data.users || []);
+      } else {
+        setError('Failed to fetch Whop members');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
+  const handleInviteUser = async (targetUserId?: string) => {
+    const idToInvite = (targetUserId || inviteUserId).trim();
+    if (!idToInvite) return;
+    // Prevent inviting users that already exist in DB
+    if (allUsers.some(u => u.id === idToInvite)) {
+      setError('User already exists in database');
+      return;
+    }
+    setInviting(true);
+    try {
+      const response = await fetch('/api/admin/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: idToInvite })
+      });
+      if (response.ok) {
+        setSuccess('Invitation sent');
+        setInviteDialogOpen(false);
+        setInviteUserId('');
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to send invitation');
+      }
+    } catch {
+      setError('Network error');
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -795,8 +850,28 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* Roles Grid */}
-      {user?.isAdmin ? (
+      {/* Admin Tabs */}
+      {user?.isAdmin && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Tabs
+              value={adminTab}
+              onChange={(_, v) => setAdminTab(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+            >
+              <Tab label="Roles" />
+              <Tab label="Notifications" />
+              <Tab label="User Management" />
+              <Tab label="Whop Members" />
+              <Tab label="Settings" />
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Roles Grid (Admin Tab 0) */}
+      {user?.isAdmin && adminTab === 0 ? (
       <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={3}>
         {roles.map((role) => (
           <Card key={role._id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -861,8 +936,8 @@ export default function HomePage() {
           </Box>
       ):(<></>)}
 
-      {/* Notification Channel Configuration for Admins */}
-      {user?.isAdmin && experiences.length > 0 && (
+      {/* Notification Channel Configuration for Admins (Admin Tab 4) */}
+      {user?.isAdmin && adminTab === 4 && experiences.length > 0 && (
         <Card sx={{ mt: 4 }}>
           <CardContent>
             <Typography variant="h5" gutterBottom>
@@ -899,8 +974,8 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* User Management Section for Admins */}
-      {user?.isAdmin && allUsers.length > 0 && (
+      {/* User Management Section for Admins (Admin Tab 2) */}
+      {user?.isAdmin && adminTab === 2 && allUsers.length > 0 && (
         <Card sx={{ mt: 4 }}>
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -948,6 +1023,7 @@ export default function HomePage() {
               >
                 Search
               </Button>
+              {/* Invite is handled from Whop Members tab to ensure selecting non-local users */}
             </Box>
 
             {/* Pagination Info and Controls */}
@@ -1134,8 +1210,8 @@ export default function HomePage() {
           )}
 
 
-      {/* Create Role Button for Admins */}
-      {user?.isAdmin && (
+      {/* Create Role Button for Admins (visible on Roles tab) */}
+      {user?.isAdmin && adminTab === 0 && (
         <Box display="flex" justifyContent="center" mt={4}>
               <Button
                 variant="contained"
@@ -1146,6 +1222,83 @@ export default function HomePage() {
             Create New Role
               </Button>
         </Box>
+      )}
+
+      {/* Whop Members (Admin Tab 3) */}
+      {user?.isAdmin && adminTab === 3 && (
+        <Card sx={{ mt: 4 }}>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h5" gutterBottom>
+                Whop Members
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={fetchWhopMembers}
+                startIcon={<RefreshIcon />}
+              >
+                Refresh
+              </Button>
+            </Box>
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                placeholder="Search by name, username, or email..."
+                size="small"
+                value={whopSearch}
+                onChange={(e) => setWhopSearch(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') fetchWhopMembers();
+                }}
+                sx={{ flexGrow: 1 }}
+              />
+              <Button variant="outlined" size="small" onClick={fetchWhopMembers} startIcon={<RefreshIcon />}>Search</Button>
+            </Box>
+            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>User</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell align="right">Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {whopMembers.map((wm) => {
+                    const existsLocally = allUsers.some(u => u.id === wm.id);
+                    return (
+                    <TableRow key={wm.id}>
+                      <TableCell>
+                        <Box display="flex" alignItems="center" gap={2}>
+                          <Avatar src={wm.avatarUrl} sx={{ width: 32, height: 32 }}>
+                            {wm.name?.charAt(0)}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight="bold">{wm.name}</Typography>
+                            <Typography variant="caption" color="text.secondary">@{wm.username}</Typography>
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">{wm.email || '-'}</Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          variant="contained"
+                          size="small"
+                          disabled={existsLocally}
+                          onClick={() => handleInviteUser(wm.id)}
+                        >
+                          {existsLocally ? 'Already in DB' : 'Invite'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );})}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
       )}
 
       {/* Create Role Dialog */}
@@ -1221,6 +1374,29 @@ export default function HomePage() {
             disabled={!notificationMessage.trim()}
           >
             Send Notification
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Invite User Dialog (accepts Whop userId) */}
+      <Dialog open={inviteDialogOpen} onClose={() => setInviteDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Invite User by Whop User ID</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Whop User ID"
+            fullWidth
+            variant="outlined"
+            value={inviteUserId}
+            onChange={(e) => setInviteUserId(e.target.value)}
+            placeholder="user_XXXXXXXX"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInviteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => handleInviteUser()} variant="contained" disabled={inviting || !inviteUserId.trim() || allUsers.some(u => u.id === inviteUserId.trim())}>
+            {inviting ? 'Sending...' : 'Send Invite'}
           </Button>
         </DialogActions>
       </Dialog>
