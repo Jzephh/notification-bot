@@ -861,7 +861,6 @@ export default function HomePage() {
               scrollButtons="auto"
             >
               <Tab label="Roles" />
-              <Tab label="Notifications" />
               <Tab label="User Management" />
               <Tab label="Whop Members" />
               <Tab label="Settings" />
@@ -913,23 +912,6 @@ export default function HomePage() {
               <Typography variant="body2" color="text.secondary" mb={2}>
                 {role.description || 'No description'}
             </Typography>
-
-              <Box display="flex" gap={1}>
-            {user?.isAdmin && (
-              <Button
-                variant="contained"
-                    size="small"
-                    onClick={() => {
-                      setSelectedRole(role);
-                      setNotifyDialogOpen(true);
-                    }}
-                    startIcon={<SendIcon />}
-                    fullWidth
-                  >
-                    Send Notification
-              </Button>
-            )}
-          </Box>
             </CardContent>
           </Card>
             ))}
