@@ -1204,10 +1204,10 @@ export default function HomePage() {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom sx={{ mt: 1 }}>
-            You will receive the role <strong>@{selectedRoleForRequest?.name}</strong> immediately.
+            Role Description:
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            This role will be assigned to you right away.
+            {selectedRoleForRequest?.description}
           </Typography>
         </DialogContent>
         <DialogActions>
