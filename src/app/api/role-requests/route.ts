@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const requests = await RoleRequest.find(query).sort({ createdAt: -1 }).limit(100);
 
     return NextResponse.json({ requests });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

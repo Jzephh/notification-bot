@@ -3,7 +3,6 @@ import { getWhopSdk } from '@/lib/whop';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import Role from '@/models/Role';
-import RoleRequest from '@/models/RoleRequest';
 
 export async function POST(request: NextRequest) {
   try {
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
       action,
       roleName: roleNameLower
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

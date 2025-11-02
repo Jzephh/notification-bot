@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         isRead: notif.readBy.includes(verification.userId)
       }))
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -87,7 +87,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, message: 'Notification deleted' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -143,7 +143,7 @@ export async function PATCH(request: NextRequest) {
     } else {
       return NextResponse.json({ error: 'Invalid action. Use "mark-read" or "mark-all-read"' }, { status: 400 });
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

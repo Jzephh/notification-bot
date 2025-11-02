@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }).sort({ createdAt: -1 });
 
     return NextResponse.json({ roles });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -172,7 +172,7 @@ export async function DELETE(request: NextRequest) {
     await Role.deleteOne({ _id: roleId });
 
     return NextResponse.json({ success: true, message: 'Role deleted successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

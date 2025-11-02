@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         createdAt: notification.createdAt
       }
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

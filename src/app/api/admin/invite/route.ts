@@ -58,7 +58,6 @@ export async function POST(request: NextRequest) {
       () => sdk.invitations?.create?.({ companyId, userId, role }),
     ];
 
-    let _lastError: unknown = null; // underscore to avoid unused-var rule
     for (const fn of tryFns) {
       try {
         if (typeof fn === 'function') {
@@ -68,8 +67,8 @@ export async function POST(request: NextRequest) {
             break;
           }
         }
-      } catch (e) {
-        _lastError = e;
+      } catch {
+        // Ignore errors - try next method
       }
     }
 
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
       },
       invitation: inviteResponse || null,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to invite user' }, { status: 500 });
   }
 }

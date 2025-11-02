@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       total: filteredExperiences.length,
       totalAll: allExperiences.length
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch experiences' }, { status: 500 });
   }
 }

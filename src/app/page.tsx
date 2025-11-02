@@ -37,13 +37,15 @@ import {
   Add as AddIcon,
   Notifications as NotificationsIcon,
   AdminPanelSettings as AdminIcon,
-  Send as SendIcon,
   CheckCircle as CheckIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import AdminSetup from '@/components/AdminSetup';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface User {
   id: string;
@@ -71,19 +73,6 @@ interface Notification {
   isRead: boolean;
 }
 
-interface RoleRequest {
-  _id: string;
-  userId: string;
-  username: string;
-  roleName: string;
-  status: 'pending' | 'approved' | 'rejected';
-  requestedBy: string;
-  handledBy?: string;
-  handledAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface Experience {
   id: string;
   name: string;
@@ -99,11 +88,11 @@ interface NotificationSettings {
 }
 
 export default function HomePage() {
+  const { mode, toggleMode } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [roleRequests, setRoleRequests] = useState<RoleRequest[]>([]);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,7 +144,6 @@ export default function HomePage() {
     if (user) {
       fetchRoles();
       fetchNotifications();
-      fetchRoleRequests();
       if (user.isAdmin) {
         fetchUsers();
         fetchExperiences();
@@ -280,20 +268,6 @@ export default function HomePage() {
     }
   };
 
-  const fetchRoleRequests = async () => {
-    try {
-      const filter = user?.isAdmin ? 'all' : 'my';
-      const response = await fetch(`/api/role-requests?filter=${filter}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRoleRequests(data.requests);
-      } else {
-        setError('Failed to fetch role requests');
-      }
-    } catch {
-      setError('Network error');
-    }
-  };
 
   const fetchExperiences = async (filterType = 'chat') => {
     try {
@@ -616,7 +590,7 @@ export default function HomePage() {
   }
 
   return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box display="flex" alignItems="center" gap={2}>
@@ -626,7 +600,14 @@ export default function HomePage() {
         </Typography>
       </Box>
 
-      {user && (
+      <Box display="flex" alignItems="center" gap={2}>
+        <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+          <IconButton onClick={toggleMode} color="inherit">
+            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+          </IconButton>
+        </Tooltip>
+
+        {user && (
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar src={user.avatarUrl} sx={{ width: 40, height: 40 }}>
               {user.name.charAt(0)}
@@ -644,6 +625,7 @@ export default function HomePage() {
             )}
           </Box>
         )}
+      </Box>
       </Box>
 
       {/* User's Assigned Roles */}
@@ -934,7 +916,6 @@ export default function HomePage() {
                 size="small"
                 onClick={() => {
                   fetchUsers();
-                  fetchRoleRequests();
                 }}
                 startIcon={<RefreshIcon />}
               >
@@ -942,7 +923,7 @@ export default function HomePage() {
               </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Assign roles that users have requested. Users must submit a request before you can assign them a role.
+              Assign or remove roles for users in your company.
             </Typography>
 
             {/* Search and Pagination Controls */}
