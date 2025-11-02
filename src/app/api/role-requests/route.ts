@@ -84,106 +84,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You already have this role' }, { status: 400 });
     }
 
-    // Check if there's already a pending request for this role
-    const existingRequest = await RoleRequest.findOne({
-      userId: verification.userId,
-      roleName,
-      status: 'pending'
-    });
-
-    if (existingRequest) {
-      return NextResponse.json({ error: 'You already have a pending request for this role' }, { status: 400 });
+    // Immediately assign the role to the user (no approval needed)
+    const roleNameLower = roleName.toLowerCase().trim();
+    
+    if (!user.roles.includes(roleNameLower)) {
+      user.roles.push(roleNameLower);
+      await user.save();
     }
 
-    // Create the request
+    // Create a record of the request for history (status: 'approved' for backward compatibility)
     const roleRequest = await RoleRequest.create({
       companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID,
       userId: verification.userId,
       username: user.username,
-      roleName,
-      status: 'pending',
+      roleName: roleNameLower,
+      status: 'approved', // Auto-approved, no admin action needed
       requestedBy: verification.userId
     });
 
-    return NextResponse.json({ request: roleRequest, message: 'Role request submitted successfully' });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-      return NextResponse.json({ error: errorMessage }, { status: 500 });
-    }
-}
-
-// PATCH: Approve or reject a role request (admin only)
-export async function PATCH(request: NextRequest) {
-  try {
-    const sdk = getWhopSdk();
-    const verification = await sdk.verifyUserToken(request.headers);
-    
-    if (!verification.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    await connectDB();
-    
-    const admin = await User.findOne({ 
-      userId: verification.userId,
-      companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID 
-    });
-
-    if (!admin || !admin.isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
-    const { requestId, action } = await request.json(); // action: 'approve' or 'reject'
-
-    if (!requestId || !action) {
-      return NextResponse.json({ error: 'Request ID and action are required' }, { status: 400 });
-    }
-
-    const roleRequest = await RoleRequest.findOne({
-      _id: requestId,
-      companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID
-    });
-
-    if (!roleRequest) {
-      return NextResponse.json({ error: 'Role request not found' }, { status: 404 });
-    }
-
-    if (roleRequest.status !== 'pending') {
-      return NextResponse.json({ error: 'This request has already been handled' }, { status: 400 });
-    }
-
-    if (action === 'approve') {
-      // Update request status
-      roleRequest.status = 'approved';
-      roleRequest.handledBy = verification.userId;
-      roleRequest.handledAt = new Date();
-      await roleRequest.save();
-
-      // Assign the role to the user
-      const targetUser = await User.findOne({
-        userId: roleRequest.userId,
-        companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID
-      });
-
-      if (targetUser && !targetUser.roles.includes(roleRequest.roleName)) {
-        targetUser.roles.push(roleRequest.roleName);
-        await targetUser.save();
+    return NextResponse.json({ 
+      request: roleRequest, 
+      message: 'Role assigned successfully',
+      user: {
+        id: user.userId,
+        username: user.username,
+        roles: user.roles
       }
-
-      return NextResponse.json({ message: 'Role request approved and role assigned', request: roleRequest });
-    } else if (action === 'reject') {
-      // Update request status
-      roleRequest.status = 'rejected';
-      roleRequest.handledBy = verification.userId;
-      roleRequest.handledAt = new Date();
-      await roleRequest.save();
-
-      return NextResponse.json({ message: 'Role request rejected', request: roleRequest });
-    } else {
-      return NextResponse.json({ error: 'Invalid action. Use "approve" or "reject"' }, { status: 400 });
-    }
+    });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
       return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
+

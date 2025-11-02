@@ -469,40 +469,14 @@ export default function HomePage() {
       });
 
       if (response.ok) {
-        setSuccess(`Request submitted for @${selectedRoleForRequest.name}`);
+        setSuccess(`Role @${selectedRoleForRequest.name} assigned successfully!`);
         setRequestRoleDialogOpen(false);
         setSelectedRoleForRequest(null);
-        fetchRoleRequests();
+        fetchUser(); // Refresh current user to show new role
+        fetchUsers(); // Refresh users list if admin
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to submit role request');
-      }
-    } catch {
-      setError('Network error');
-    }
-  };
-
-  const handleApproveRejectRequest = async (requestId: string, action: 'approve' | 'reject') => {
-    try {
-      const response = await fetch('/api/role-requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestId,
-          action
-        })
-      });
-
-      if (response.ok) {
-        setSuccess(`Request ${action === 'approve' ? 'approved' : 'rejected'}`);
-        fetchRoleRequests();
-        if (user?.isAdmin) {
-          fetchUsers(); // Refresh users list
-        }
-        fetchUser(); // Refresh current user
-      } else {
-        const data = await response.json();
-        setError(data.error || `Failed to ${action} request`);
+        setError(data.error || 'Failed to assign role');
       }
     } catch {
       setError('Network error');
@@ -716,37 +690,28 @@ export default function HomePage() {
         <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Request a Role
+              Get a Role
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Select a role you&apos;d like to have assigned. Admins will review your request.
+              Select a role to get it assigned immediately. No approval needed.
             </Typography>
             <Box display="flex" flexWrap="wrap" gap={2}>
               {roles
                 .filter(role => !user?.roles?.includes(role.name))
-                .map((role) => {
-                  const hasPendingRequest = roleRequests.some(
-                    req => req.roleName === role.name && req.status === 'pending' && req.userId === user?.id
-                  );
-                  const isApproved = roleRequests.some(
-                    req => req.roleName === role.name && req.status === 'approved' && req.userId === user?.id
-                  );
-                  return (
-                    <Button
-                      key={role._id}
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => {
-                        setSelectedRoleForRequest(role);
-                        setRequestRoleDialogOpen(true);
-                      }}
-                      disabled={hasPendingRequest || isApproved}
-                      sx={{ minWidth: 150 }}
-                    >
-                      {hasPendingRequest ? 'Pending...' : isApproved ? 'Approved' : `Request @${role.name}`}
-                    </Button>
-                  );
-                })}
+                .map((role) => (
+                  <Button
+                    key={role._id}
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      setSelectedRoleForRequest(role);
+                      setRequestRoleDialogOpen(true);
+                    }}
+                    sx={{ minWidth: 150 }}
+                  >
+                    Get @{role.name}
+                  </Button>
+                ))}
             </Box>
           </CardContent>
         </Card>
@@ -1052,7 +1017,6 @@ export default function HomePage() {
                   <TableRow>
                     <TableCell>User</TableCell>
                     <TableCell>Current Roles</TableCell>
-                    <TableCell>Pending Requests</TableCell>
                     <TableCell>Assign Roles</TableCell>
                   </TableRow>
                 </TableHead>
@@ -1098,71 +1062,13 @@ export default function HomePage() {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Box display="flex" flexDirection="column" gap={1}>
-                          {(() => {
-                            // Get pending requests for this user
-                            const pendingRequests = roleRequests
-                              .filter(req => req.userId === targetUser.id && req.status === 'pending');
-                            
-                            if (pendingRequests.length === 0) {
-                              return (
-                                <Typography variant="body2" color="text.secondary">
-                                  No pending requests
-                                </Typography>
-                              );
-                            }
-                            
-                            return pendingRequests.map((request) => (
-                              <Box key={request._id} display="flex" alignItems="center" gap={1}>
-                                <Chip 
-                                  label={`@${request.roleName}`} 
-                                  size="small" 
-                                  color="warning" 
-                                  variant="outlined" 
-                                />
-                                <Button
-                                  size="small"
-                                  variant="contained"
-                                  color="success"
-                                  onClick={() => handleApproveRejectRequest(request._id, 'approve')}
-                                  sx={{ minWidth: 70 }}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  color="error"
-                                  onClick={() => handleApproveRejectRequest(request._id, 'reject')}
-                                  sx={{ minWidth: 70 }}
-                                >
-                                  Reject
-                                </Button>
-                              </Box>
-                            ));
-                          })()}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
                         <Box display="flex" flexWrap="wrap" gap={0.5}>
-                          {(() => {
-                            // Get requested roles for this user
-                            const requestedRoles = roleRequests
-                              .filter(req => req.userId === targetUser.id && req.status === 'approved')
-                              .map(req => req.roleName);
-                            
-                            // Filter to show only requested roles
-                            const availableRoles = roles.filter(role => requestedRoles.includes(role.name));
-                            
-                            if (availableRoles.length === 0) {
-                              return (
-                                <Typography variant="body2" color="text.secondary">
-                                  No requested roles
-                                </Typography>
-                              );
-                            }
-                            
-                            return availableRoles.map((role) => (
+                          {roles.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary">
+                              No roles available
+                            </Typography>
+                          ) : (
+                            roles.map((role) => (
                               <Tooltip key={role._id} title={`Assign @${role.name} to ${targetUser.name}`}>
                                 <IconButton
                                   size="small"
@@ -1178,8 +1084,8 @@ export default function HomePage() {
                                   />
                                 </IconButton>
                               </Tooltip>
-                            ));
-                          })()}
+                            ))
+                          )}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -1426,17 +1332,17 @@ export default function HomePage() {
         </DialogActions>
       </Dialog>
 
-      {/* Request Role Dialog */}
+      {/* Get Role Dialog */}
       <Dialog open={requestRoleDialogOpen} onClose={() => setRequestRoleDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Request Role: @{selectedRoleForRequest?.name}
+          Get Role: @{selectedRoleForRequest?.name}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom sx={{ mt: 1 }}>
-            You are requesting the role <strong>@{selectedRoleForRequest?.name}</strong>.
+            You will receive the role <strong>@{selectedRoleForRequest?.name}</strong> immediately.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            An admin will review your request and notify you once it has been processed.
+            This role will be assigned to you right away.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1445,7 +1351,7 @@ export default function HomePage() {
             onClick={handleRequestRole}
             variant="contained"
           >
-            Submit Request
+            Get Role
           </Button>
         </DialogActions>
       </Dialog>

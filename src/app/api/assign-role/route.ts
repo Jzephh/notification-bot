@@ -72,30 +72,13 @@ export async function POST(request: NextRequest) {
     const roleNameLower = roleName.toLowerCase().trim();
     
     if (action === 'assign') {
-      // Check if the user has an approved request for this role
-      const approvedRequest = await RoleRequest.findOne({
-        userId: targetUserId,
-        roleName: roleNameLower,
-        status: 'approved'
-      });
-
-      if (!approvedRequest) {
-        return NextResponse.json({ error: 'User must have an approved request for this role' }, { status: 400 });
-      }
-
-      // Add role if not already assigned
+      // Add role if not already assigned (no approval needed)
       if (!targetUser.roles.includes(roleNameLower)) {
         targetUser.roles.push(roleNameLower);
       }
     } else if (action === 'remove') {
       // Remove role
       targetUser.roles = targetUser.roles.filter((r: string) => r !== roleNameLower);
-      
-      // Mark any approved requests for this role as rejected (optional cleanup)
-      await RoleRequest.updateMany(
-        { userId: targetUserId, roleName: roleNameLower, status: 'approved' },
-        { status: 'rejected' }
-      );
     }
 
     await targetUser.save();
