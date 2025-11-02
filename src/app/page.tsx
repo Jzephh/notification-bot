@@ -26,11 +26,7 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Tooltip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel
+  Tooltip
 } from '@mui/material';
 import { Tabs, Tab } from '@mui/material';
 import {
@@ -73,19 +69,6 @@ interface Notification {
   isRead: boolean;
 }
 
-interface Experience {
-  id: string;
-  name: string;
-  type: string;
-  company?: {
-    id: string;
-  };
-}
-
-interface NotificationSettings {
-  experienceId: string;
-  experienceName: string;
-}
 
 export default function HomePage() {
   const { mode, toggleMode } = useTheme();
@@ -93,8 +76,6 @@ export default function HomePage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -146,8 +127,6 @@ export default function HomePage() {
       fetchNotifications();
       if (user.isAdmin) {
         fetchUsers();
-        fetchExperiences();
-        fetchNotificationSettings();
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -269,63 +248,6 @@ export default function HomePage() {
   };
 
 
-  const fetchExperiences = async (filterType = 'chat') => {
-    try {
-      const response = await fetch(`/api/experiences?type=${filterType}`);
-      if (response.ok) {
-        const data = await response.json();
-        setExperiences(data.experiences || []);
-      } else {
-        setError('Failed to fetch experiences');
-      }
-    } catch {
-      setError('Network error');
-    }
-  };
-
-  const fetchNotificationSettings = async () => {
-    try {
-      const response = await fetch('/api/notification-settings');
-      if (response.ok) {
-        const data = await response.json();
-        setNotificationSettings(data.settings);
-      } else {
-        // Settings might not exist yet - this is OK
-        setNotificationSettings(null);
-      }
-    } catch {
-      setNotificationSettings(null);
-    }
-  };
-
-  const handleSaveExperience = async (experienceId: string) => {
-    const experience = experiences.find(exp => exp.id === experienceId);
-    if (!experience) {
-      setError('Invalid experience selected');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/notification-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          experienceId,
-          experienceName: experience.name
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setNotificationSettings(data.settings);
-        setSuccess('Notification channel configured successfully');
-      } else {
-        setError('Failed to save settings');
-      }
-    } catch {
-      setError('Network error');
-    }
-  };
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
@@ -810,7 +732,6 @@ export default function HomePage() {
               <Tab label="Roles" />
               <Tab label="User Management" />
               <Tab label="Whop Members" />
-              <Tab label="Settings" />
             </Tabs>
           </CardContent>
         </Card>
@@ -865,43 +786,6 @@ export default function HomePage() {
           </Box>
       ):(<></>)}
 
-      {/* Notification Channel Configuration for Admins (Admin Tab 4) */}
-      {user?.isAdmin && adminTab === 3 && experiences.length > 0 && (
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              Notification Channel Configuration
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Select a chat channel where role notifications will be sent.
-            </Typography>
-
-            <Box display="flex" alignItems="center" gap={2}>
-              <FormControl fullWidth>
-                <InputLabel>Select Chat Channel</InputLabel>
-                <Select
-                  value={notificationSettings?.experienceId || ''}
-                  onChange={(e) => handleSaveExperience(e.target.value)}
-                  label="Select Chat Channel"
-                >
-                  {experiences.map((exp) => (
-                    <MenuItem key={exp.id} value={exp.id}>
-                      {exp.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {notificationSettings && (
-                <Chip
-                  label={`Configured: ${notificationSettings.experienceName}`}
-                  color="success"
-                  variant="outlined"
-                />
-              )}
-            </Box>
-          </CardContent>
-        </Card>
-      )}
 
       {/* User Management Section for Admins (Admin Tab 2) */}
       {user?.isAdmin && adminTab === 1 && allUsers.length > 0 && (
