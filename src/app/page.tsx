@@ -1149,21 +1149,23 @@ export default function HomePage() {
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDeleteRole(role._id)}
-                                  sx={{
-                                    color: 'error.main',
-                                    '&:hover': {
-                                      backgroundColor: 'error.main',
-                                      color: 'white',
-                                      transform: 'scale(1.1)',
-                                    },
-                                    transition: 'all 0.2s',
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
+                                {role.name.toLowerCase() !== 'all' && (
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => handleDeleteRole(role._id)}
+                                    sx={{
+                                      color: 'error.main',
+                                      '&:hover': {
+                                        backgroundColor: 'error.main',
+                                        color: 'white',
+                                        transform: 'scale(1.1)',
+                                      },
+                                      transition: 'all 0.2s',
+                                    }}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                )}
                               </>
                             )}
                           </Box>
@@ -1313,16 +1315,25 @@ export default function HomePage() {
                       <TableCell>
                         <Box display="flex" flexWrap="wrap" gap={0.5}>
                           {targetUser.roles && targetUser.roles.length > 0 && targetUser.roles.filter(role => role && role.trim() !== '').length > 0 ? (
-                            targetUser.roles.filter(role => role && role.trim() !== '').map((roleName) => (
-                              <Chip
-                                key={roleName}
-                                label={`@${roleName}`}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                                onDelete={() => handleAssignRole(targetUser.id, roleName, 'remove')}
-                              />
-                            ))
+                            targetUser.roles.filter(role => role && role.trim() !== '').map((roleName) => {
+                              const isAllRole = roleName.toLowerCase() === 'all';
+                              return (
+                                <Chip
+                                  key={roleName}
+                                  label={`@${roleName}`}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                  {...(isAllRole ? {} : {
+                                    onDelete: () => handleAssignRole(targetUser.id, roleName, 'remove')
+                                  })}
+                                  sx={isAllRole ? {
+                                    opacity: 0.8,
+                                    cursor: 'default',
+                                  } : {}}
+                                />
+                              );
+                            })
                           ) : (
                 <Typography variant="body2" color="text.secondary">
                               No roles assigned

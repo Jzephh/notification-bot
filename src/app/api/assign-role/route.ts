@@ -70,6 +70,11 @@ export async function POST(request: NextRequest) {
 
     const roleNameLower = roleName.toLowerCase().trim();
     
+    // Prevent removal of "@all" role (even by admins)
+    if (action === 'remove' && roleNameLower === 'all') {
+      return NextResponse.json({ error: 'The "@all" role cannot be removed' }, { status: 400 });
+    }
+    
     if (action === 'assign') {
       // Add role if not already assigned (no approval needed)
       if (!targetUser.roles.includes(roleNameLower)) {

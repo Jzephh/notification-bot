@@ -157,6 +157,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Role not found' }, { status: 404 });
     }
 
+    // Prevent deletion of "@all" role
+    if (role.name.toLowerCase() === 'all') {
+      return NextResponse.json({ error: 'The "@all" role cannot be deleted' }, { status: 400 });
+    }
+
     // Remove this role from all users who have it assigned
     await User.updateMany(
       { 
