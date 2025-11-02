@@ -43,6 +43,7 @@ import {
 } from '@mui/icons-material';
 import AdminSetup from '@/components/AdminSetup';
 import { useTheme } from '@/contexts/ThemeContext';
+import { getContrastTextColor, darkenColor, lightenColor } from '@/lib/colorUtils';
 
 interface User {
   id: string;
@@ -656,26 +657,55 @@ export default function HomePage() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: 0.1 }}
             >
-              <Card sx={{ mb: 4 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Your Assigned Roles
-            </Typography>
-            <Box display="flex" flexWrap="wrap" gap={1}>
-              {user.roles.filter(role => role && role.trim() !== '').map((roleName) => (
-                <Chip
-                  key={roleName}
-                  label={`@${roleName}`}
-                  color="primary"
-                  variant="outlined"
-                  icon={<CheckIcon />}
-                />
-              ))}
-            </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              You will receive notifications when these roles are mentioned.
-            </Typography>
-          </CardContent>
+              <Card 
+                sx={{ 
+                  mb: 4,
+                  background: mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%)'
+                    : 'linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(220, 0, 78, 0.03) 100%)',
+                  border: mode === 'dark'
+                    ? '1px solid rgba(99, 102, 241, 0.3)'
+                    : '1px solid rgba(25, 118, 210, 0.2)',
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6" gutterBottom fontWeight={600}>
+                    Your Assigned Roles
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={1.5} mb={2}>
+                    {user.roles.filter(role => role && role.trim() !== '').map((roleName) => {
+                      const roleColor = roles.find(r => r.name === roleName)?.color;
+                      return (
+                        <motion.div
+                          key={roleName}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Chip
+                            label={`@${roleName}`}
+                            icon={<CheckIcon />}
+                            sx={{
+                              backgroundColor: roleColor || (mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(25, 118, 210, 0.1)'),
+                              color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
+                              fontWeight: 600,
+                              fontSize: '0.875rem',
+                              border: roleColor ? `2px solid ${roleColor}` : undefined,
+                              boxShadow: roleColor 
+                                ? `0 2px 8px ${roleColor}30, 0 1px 3px rgba(0, 0, 0, 0.1)`
+                                : '0 1px 3px rgba(0, 0, 0, 0.1)',
+                              '& .MuiChip-icon': {
+                                color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
+                              },
+                            }}
+                          />
+                        </motion.div>
+                      );
+                    })}
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    You will receive notifications when these roles are mentioned.
+                  </Typography>
+                </CardContent>
               </Card>
             </motion.div>
           )}
@@ -689,15 +719,25 @@ export default function HomePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Card sx={{ mb: 4 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Your Assigned Roles
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              You don&apos;t have any roles assigned. Request roles below.
-            </Typography>
-              </CardContent>
+              <Card 
+                sx={{ 
+                  mb: 4,
+                  background: mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(236, 72, 153, 0.02) 100%)'
+                    : 'linear-gradient(135deg, rgba(25, 118, 210, 0.03) 0%, rgba(220, 0, 78, 0.01) 100%)',
+                  border: mode === 'dark'
+                    ? '1px solid rgba(99, 102, 241, 0.2)'
+                    : '1px solid rgba(25, 118, 210, 0.15)',
+                }}
+              >
+                <CardContent>
+                  <Typography variant="h6" gutterBottom fontWeight={600}>
+                    Your Assigned Roles
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    You don&apos;t have any roles assigned. Request roles below.
+                  </Typography>
+                </CardContent>
               </Card>
             </motion.div>
           )}
@@ -737,8 +777,36 @@ export default function HomePage() {
                         height: '100%', 
                         display: 'flex', 
                         flexDirection: 'column',
-                        transition: 'all 0.2s',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         cursor: 'pointer',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: mode === 'dark' 
+                          ? '1px solid rgba(99, 102, 241, 0.2)' 
+                          : '1px solid rgba(0, 0, 0, 0.08)',
+                        boxShadow: mode === 'dark'
+                          ? '0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)'
+                          : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '3px',
+                          background: `linear-gradient(90deg, ${role.color}, ${lightenColor(role.color, 20)})`,
+                          opacity: 0,
+                          transition: 'opacity 0.3s',
+                        },
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: mode === 'dark'
+                            ? `0 12px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px ${role.color}40, 0 0 20px ${role.color}20`
+                            : `0 8px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px ${role.color}30`,
+                          '&::before': {
+                            opacity: 1,
+                          },
+                        },
                       }}
                     >
                     <CardContent sx={{ flexGrow: 1 }}>
@@ -747,12 +815,29 @@ export default function HomePage() {
                           label={`@${role.name}`}
                           sx={{
                             backgroundColor: role.color,
-                            color: 'white',
-                            fontWeight: 'bold'
+                            color: getContrastTextColor(role.color),
+                            fontWeight: 700,
+                            fontSize: '0.875rem',
+                            height: '32px',
+                            border: `2px solid ${role.color}`,
+                            boxShadow: `0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px ${darkenColor(role.color, 20)}`,
+                            '& .MuiChip-label': {
+                              px: 1.5,
+                              fontWeight: 700,
+                            },
                           }}
                         />
                       </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 40 }}>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        sx={{ 
+                          mb: 2, 
+                          minHeight: 48,
+                          lineHeight: 1.6,
+                          fontSize: '0.9rem',
+                        }}
+                      >
                         {role.description || 'No description available'}
                       </Typography>
                       <Button
@@ -765,10 +850,20 @@ export default function HomePage() {
                         fullWidth
                         sx={{
                           backgroundColor: role.color,
+                          color: getContrastTextColor(role.color),
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          textTransform: 'none',
+                          borderRadius: '8px',
+                          py: 1.2,
+                          boxShadow: `0 4px 12px ${role.color}40, 0 2px 4px rgba(0, 0, 0, 0.1)`,
+                          border: `1px solid ${darkenColor(role.color, 15)}`,
                           '&:hover': {
-                            backgroundColor: role.color,
-                            opacity: 0.9
-                          }
+                            backgroundColor: darkenColor(role.color, 10),
+                            boxShadow: `0 6px 16px ${role.color}60, 0 4px 8px rgba(0, 0, 0, 0.15)`,
+                            transform: 'translateY(-1px)',
+                          },
+                          transition: 'all 0.2s ease-in-out',
                         }}
                       >
                         Get Role
@@ -814,17 +909,34 @@ export default function HomePage() {
               Notifications for roles you are assigned to:
           </Typography>
             <Box display="flex" flexDirection="column" gap={2}>
-              {notifications.map((notification) => (
-                <Card
+              {notifications.map((notification, index) => (
+                <motion.div
                   key={notification.id}
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderLeft: notification.isRead ? 'none' : '4px solid',
-                    borderLeftColor: 'primary.main',
-                    backgroundColor: notification.isRead ? 'transparent' : 'action.hover'
-                  }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
                 >
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      p: 2.5,
+                      borderLeft: notification.isRead ? '2px solid transparent' : '4px solid',
+                      borderLeftColor: notification.isRead ? 'transparent' : mode === 'dark' ? '#6366f1' : '#1976d2',
+                      backgroundColor: notification.isRead 
+                        ? 'transparent' 
+                        : mode === 'dark'
+                          ? 'rgba(99, 102, 241, 0.1)'
+                          : 'rgba(25, 118, 210, 0.05)',
+                      borderRadius: '12px',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        transform: 'translateX(4px)',
+                        boxShadow: mode === 'dark'
+                          ? '0 4px 12px rgba(0, 0, 0, 0.3)'
+                          : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      },
+                    }}
+                  >
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                     <Box flex={1}>
                       <Box display="flex" alignItems="center" gap={1} mb={1}>
@@ -876,6 +988,7 @@ export default function HomePage() {
                     </Box>
                   </Box>
                 </Card>
+                </motion.div>
               ))}
         </Box>
           </CardContent>
@@ -909,54 +1022,133 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
-      {/* Roles Grid (Admin Tab 0) */}
-      {user?.isAdmin && adminTab === 0 ? (
-      <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={3}>
-        {roles.map((role) => (
-          <Card key={role._id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardContent sx={{ flexGrow: 1 }}>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Chip
-                  label={`@${role.name}`}
-                  sx={{
-                    backgroundColor: role.color,
-                    color: 'white',
-                    fontWeight: 'bold'
-                  }}
-                />
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography variant="body2" color="text.secondary">
-                    Role
-                  </Typography>
-                  {user?.isAdmin && (
-                    <>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditRole(role)}
-                        color="primary"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteRole(role._id)}
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </>
-                  )}
-                </Box>
-      </Box>
+        {/* Roles Grid (Admin Tab 0) */}
+        <AnimatePresence mode="wait">
+          {user?.isAdmin && adminTab === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={3}>
+                {roles.map((role, index) => (
+                  <motion.div
+                    key={role._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4 }}
+                  >
+                    <Card 
+                      sx={{ 
+                        height: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        border: mode === 'dark' 
+                          ? '1px solid rgba(99, 102, 241, 0.2)' 
+                          : '1px solid rgba(0, 0, 0, 0.08)',
+                        boxShadow: mode === 'dark'
+                          ? '0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2)'
+                          : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '3px',
+                          background: `linear-gradient(90deg, ${role.color}, ${lightenColor(role.color, 20)})`,
+                        },
+                        '&:hover': {
+                          boxShadow: mode === 'dark'
+                            ? `0 12px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px ${role.color}40, 0 0 20px ${role.color}20`
+                            : `0 8px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px ${role.color}30`,
+                        },
+                      }}
+                    >
+                      <CardContent sx={{ flexGrow: 1 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Chip
+                            label={`@${role.name}`}
+                            sx={{
+                              backgroundColor: role.color,
+                              color: getContrastTextColor(role.color),
+                              fontWeight: 700,
+                              fontSize: '0.875rem',
+                              height: '32px',
+                              border: `2px solid ${role.color}`,
+                              boxShadow: `0 2px 8px rgba(0, 0, 0, 0.15), 0 0 0 1px ${darkenColor(role.color, 20)}`,
+                              '& .MuiChip-label': {
+                                px: 1.5,
+                                fontWeight: 700,
+                              },
+                            }}
+                          />
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                              Role
+                            </Typography>
+                            {user?.isAdmin && (
+                              <>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleEditRole(role)}
+                                  sx={{
+                                    color: 'primary.main',
+                                    '&:hover': {
+                                      backgroundColor: 'primary.main',
+                                      color: 'white',
+                                      transform: 'scale(1.1)',
+                                    },
+                                    transition: 'all 0.2s',
+                                  }}
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDeleteRole(role._id)}
+                                  sx={{
+                                    color: 'error.main',
+                                    '&:hover': {
+                                      backgroundColor: 'error.main',
+                                      color: 'white',
+                                      transform: 'scale(1.1)',
+                                    },
+                                    transition: 'all 0.2s',
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </>
+                            )}
+                          </Box>
+                        </Box>
 
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                {role.description || 'No description'}
-            </Typography>
-            </CardContent>
-          </Card>
-            ))}
-          </Box>
-      ):(<></>)}
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        mb={2}
+                        sx={{
+                          lineHeight: 1.6,
+                          fontSize: '0.9rem',
+                          minHeight: 40,
+                        }}
+                      >
+                        {role.description || 'No description'}
+                      </Typography>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </Box>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
 
       {/* User Management Section for Admins (Admin Tab 2) */}
@@ -1135,96 +1327,201 @@ export default function HomePage() {
           )}
 
 
-      {/* Create Role Button for Admins (visible on Roles tab) */}
-      {user?.isAdmin && adminTab === 0 && (
-        <Box display="flex" justifyContent="center" mt={4}>
-              <Button
-                variant="contained"
-            size="large"
-            startIcon={<AddIcon />}
-            onClick={() => setCreateRoleOpen(true)}
-          >
-            Create New Role
-              </Button>
-        </Box>
-      )}
+        {/* Create Role Button for Admins (visible on Roles tab) */}
+        <AnimatePresence mode="wait">
+          {user?.isAdmin && adminTab === 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <Box display="flex" justifyContent="center" mt={4}>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateRoleOpen(true)}
+                    sx={{
+                      background: mode === 'dark'
+                        ? 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)'
+                        : 'linear-gradient(135deg, #1976d2 0%, #dc004e 100%)',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      textTransform: 'none',
+                      borderRadius: '12px',
+                      px: 4,
+                      py: 1.5,
+                      boxShadow: mode === 'dark'
+                        ? '0 8px 16px rgba(99, 102, 241, 0.4), 0 4px 8px rgba(236, 72, 153, 0.3)'
+                        : '0 4px 12px rgba(25, 118, 210, 0.4)',
+                      '&:hover': {
+                        background: mode === 'dark'
+                          ? 'linear-gradient(135deg, #4f46e5 0%, #db2777 100%)'
+                          : 'linear-gradient(135deg, #1565c0 0%, #c51162 100%)',
+                        boxShadow: mode === 'dark'
+                          ? '0 12px 24px rgba(99, 102, 241, 0.5), 0 6px 12px rgba(236, 72, 153, 0.4)'
+                          : '0 6px 16px rgba(25, 118, 210, 0.5)',
+                      },
+                      transition: 'all 0.3s ease-in-out',
+                    }}
+                  >
+                    Create New Role
+                  </Button>
+                </motion.div>
+              </Box>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Whop Members (Admin Tab 3) */}
-      {user?.isAdmin && adminTab === 2 && (
-        <Card sx={{ mt: 4 }}>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h5" gutterBottom>
-                Whop Members
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={fetchWhopMembers}
-                startIcon={<RefreshIcon />}
-              >
-                Refresh
-              </Button>
-            </Box>
-            <Box display="flex" gap={2} mb={2}>
-              <TextField
-                placeholder="Search by name, username, or email..."
-                size="small"
-                value={whopSearch}
-                onChange={(e) => setWhopSearch(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') fetchWhopMembers();
-                }}
-                sx={{ flexGrow: 1 }}
-              />
-              <Button variant="outlined" size="small" onClick={fetchWhopMembers} startIcon={<RefreshIcon />}>Search</Button>
-            </Box>
-            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>User</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell align="right">Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {whopMembers.map((wm) => {
-                    const existsLocally = allUsers.some(u => u.id === wm.id);
-                    return (
-                    <TableRow key={wm.id}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Avatar src={wm.avatarUrl} sx={{ width: 32, height: 32 }}>
-                            {wm.name?.charAt(0)}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="subtitle2" fontWeight="bold">{wm.name}</Typography>
-                            <Typography variant="caption" color="text.secondary">@{wm.username}</Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">{wm.email || '-'}</Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Button
-                          variant="contained"
-                          size="small"
-                          disabled={existsLocally}
-                          onClick={() => handleInviteUser(wm.id)}
-                        >
-                          {existsLocally ? 'Already in DB' : 'Invite'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );})}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </CardContent>
-        </Card>
-      )}
+        {/* Whop Members (Admin Tab 2) */}
+        <AnimatePresence mode="wait">
+          {user?.isAdmin && adminTab === 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Card sx={{ mt: 4 }}>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="h5" gutterBottom fontWeight={600}>
+                      Whop Members
+                    </Typography>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={fetchWhopMembers}
+                        startIcon={<RefreshIcon />}
+                        sx={{
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                    </motion.div>
+                  </Box>
+                  <Box display="flex" gap={2} mb={2}>
+                    <TextField
+                      placeholder="Search by name, username, or email..."
+                      size="small"
+                      value={whopSearch}
+                      onChange={(e) => setWhopSearch(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') fetchWhopMembers();
+                      }}
+                      sx={{ 
+                        flexGrow: 1,
+                        '& .MuiOutlinedInput-root': {
+                          borderRadius: '8px',
+                        },
+                      }}
+                    />
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        onClick={fetchWhopMembers} 
+                        startIcon={<RefreshIcon />}
+                        sx={{
+                          borderRadius: '8px',
+                          textTransform: 'none',
+                          fontWeight: 500,
+                        }}
+                      >
+                        Search
+                      </Button>
+                    </motion.div>
+                  </Box>
+                  <TableContainer 
+                    component={Paper} 
+                    sx={{ 
+                      maxHeight: 400,
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Table stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 600 }}>User</TableCell>
+                          <TableCell sx={{ fontWeight: 600 }}>Email</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 600 }}>Action</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {whopMembers.map((wm, index) => {
+                          const existsLocally = allUsers.some(u => u.id === wm.id);
+                          return (
+                            <TableRow
+                              key={wm.id}
+                              sx={{
+                                opacity: 0,
+                                animation: `fadeIn 0.3s ease-in-out ${index * 0.03}s forwards`,
+                                '&:hover': {
+                                  backgroundColor: mode === 'dark'
+                                    ? 'rgba(99, 102, 241, 0.05)'
+                                    : 'rgba(25, 118, 210, 0.03)',
+                                },
+                                '@keyframes fadeIn': {
+                                  to: { opacity: 1 },
+                                },
+                              }}
+                            >
+                                <TableCell>
+                                  <Box display="flex" alignItems="center" gap={2}>
+                                    <Avatar 
+                                      src={wm.avatarUrl} 
+                                      sx={{ 
+                                        width: 40, 
+                                        height: 40,
+                                        border: `2px solid ${mode === 'dark' ? 'rgba(99, 102, 241, 0.3)' : 'rgba(25, 118, 210, 0.3)'}`,
+                                      }}
+                                    >
+                                      {wm.name?.charAt(0)}
+                                    </Avatar>
+                                    <Box>
+                                      <Typography variant="subtitle2" fontWeight="bold">{wm.name}</Typography>
+                                      <Typography variant="caption" color="text.secondary">@{wm.username}</Typography>
+                                    </Box>
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Typography variant="body2" color="text.secondary">{wm.email || '-'}</Typography>
+                                </TableCell>
+                                <TableCell align="right">
+                                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Button
+                                      variant="contained"
+                                      size="small"
+                                      disabled={existsLocally}
+                                      onClick={() => handleInviteUser(wm.id)}
+                                      sx={{
+                                        borderRadius: '8px',
+                                        textTransform: 'none',
+                                        fontWeight: 500,
+                                        opacity: existsLocally ? 0.5 : 1,
+                                      }}
+                                    >
+                                      {existsLocally ? 'Already in DB' : 'Invite'}
+                                    </Button>
+                                  </motion.div>
+                                </TableCell>
+                              </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       {/* Create Role Dialog */}
       <Dialog open={createRoleOpen} onClose={() => setCreateRoleOpen(false)} maxWidth="sm" fullWidth>
@@ -1408,10 +1705,20 @@ export default function HomePage() {
             variant="contained"
             sx={{
               backgroundColor: selectedRoleForRequest?.color || '#1976d2',
+              color: getContrastTextColor(selectedRoleForRequest?.color || '#1976d2'),
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              textTransform: 'none',
+              borderRadius: '8px',
+              py: 1.2,
+              boxShadow: `0 4px 12px ${(selectedRoleForRequest?.color || '#1976d2')}40, 0 2px 4px rgba(0, 0, 0, 0.1)`,
+              border: `1px solid ${darkenColor(selectedRoleForRequest?.color || '#1976d2', 15)}`,
               '&:hover': {
-                backgroundColor: selectedRoleForRequest?.color || '#1976d2',
-                opacity: 0.9
-              }
+                backgroundColor: darkenColor(selectedRoleForRequest?.color || '#1976d2', 10),
+                boxShadow: `0 6px 16px ${(selectedRoleForRequest?.color || '#1976d2')}60, 0 4px 8px rgba(0, 0, 0, 0.15)`,
+                transform: 'translateY(-1px)',
+              },
+              transition: 'all 0.2s ease-in-out',
             }}
           >
             Get Role
