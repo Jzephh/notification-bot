@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
   Container,
@@ -512,47 +513,150 @@ export default function HomePage() {
   }
 
   return (
-      <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box display="flex" alignItems="center" gap={2}>
-          <NotificationsIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-          <Typography variant="h3" component="h1" fontWeight="bold">
-            Role Notifications
-        </Typography>
-      </Box>
-
-      <Box display="flex" alignItems="center" gap={2}>
-        <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-          <IconButton onClick={toggleMode} color="inherit">
-            {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
-        </Tooltip>
-
-        {user && (
-          <Box display="flex" alignItems="center" gap={2}>
-            <Avatar src={user.avatarUrl} sx={{ width: 40, height: 40 }}>
-              {user.name.charAt(0)}
-            </Avatar>
-            <Box>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {user.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                @{user.username}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: mode === 'dark' 
+          ? 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%)'
+          : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: mode === 'dark'
+            ? `
+              radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(236, 72, 153, 0.05) 0%, transparent 50%)
+            `
+            : 'none',
+          zIndex: 0,
+          animation: 'backgroundFloat 20s ease-in-out infinite',
+          '@keyframes backgroundFloat': {
+            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+            '33%': { transform: 'translateY(-20px) rotate(1deg)' },
+            '66%': { transform: 'translateY(10px) rotate(-1deg)' },
+          },
+        },
+      }}
+    >
+      <Container maxWidth="lg" sx={{ py: 4, minHeight: '100vh', position: 'relative', zIndex: 1 }}>
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -30, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ 
+            duration: 0.8,
+            type: "spring",
+            stiffness: 100,
+            damping: 20
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 15 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <NotificationsIcon sx={{ 
+                  fontSize: 40, 
+                  background: mode === 'dark'
+                    ? 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)'
+                    : 'linear-gradient(135deg, #1976d2 0%, #dc004e 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }} />
+              </motion.div>
+              <Typography 
+                variant="h3" 
+                component="h1" 
+                fontWeight="bold"
+                sx={{
+                  background: mode === 'dark'
+                    ? 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)'
+                    : 'linear-gradient(135deg, #1976d2 0%, #dc004e 100%)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                Role Notifications
               </Typography>
             </Box>
-            {user.isAdmin && (
-              <Chip icon={<AdminIcon />} label="Admin" color="primary" size="small" />
-            )}
-          </Box>
-        )}
-      </Box>
-      </Box>
 
-      {/* User's Assigned Roles */}
-      {user && user.roles && user.roles.length > 0 && (
-        <Card sx={{ mb: 4 }}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                  <IconButton onClick={toggleMode} color="inherit">
+                    {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                  </IconButton>
+                </motion.div>
+              </Tooltip>
+
+              {user && (
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Avatar 
+                      src={user.avatarUrl} 
+                      sx={{ 
+                        width: 40, 
+                        height: 40,
+                        border: `2px solid ${mode === 'dark' ? 'rgba(99, 102, 241, 0.5)' : 'rgba(25, 118, 210, 0.5)'}`,
+                        boxShadow: mode === 'dark' 
+                          ? '0 0 15px rgba(99, 102, 241, 0.3)'
+                          : '0 0 15px rgba(25, 118, 210, 0.3)',
+                      }}
+                    >
+                      {user.name.charAt(0)}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {user.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        @{user.username}
+                      </Typography>
+                    </Box>
+                    {user.isAdmin && (
+                      <Chip 
+                        icon={<AdminIcon />} 
+                        label="Admin" 
+                        color="primary" 
+                        size="small"
+                        sx={{
+                          background: mode === 'dark'
+                            ? 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)'
+                            : undefined,
+                        }}
+                      />
+                    )}
+                  </Box>
+                </motion.div>
+              )}
+            </Box>
+          </Box>
+        </motion.div>
+
+        {/* User's Assigned Roles */}
+        <AnimatePresence mode="wait">
+          {user && user.roles && user.roles.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Your Assigned Roles
@@ -572,12 +676,20 @@ export default function HomePage() {
               You will receive notifications when these roles are mentioned.
             </Typography>
           </CardContent>
-        </Card>
-      )}
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Show message when user has no roles */}
-      {user && (!user.roles || user.roles.length === 0) && (
-        <Card sx={{ mb: 4 }}>
+        {/* Show message when user has no roles */}
+        <AnimatePresence mode="wait">
+          {user && (!user.roles || user.roles.length === 0) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Your Assigned Roles
@@ -585,41 +697,92 @@ export default function HomePage() {
             <Typography variant="body2" color="text.secondary">
               You don&apos;t have any roles assigned. Request roles below.
             </Typography>
-          </CardContent>
-        </Card>
-      )}
+              </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Request Role Section */}
-      {roles.length > 0 && (
-        <Card sx={{ mb: 4 }}>
+        {/* Request Role Section */}
+        <AnimatePresence mode="wait">
+          {roles.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card sx={{ mb: 4 }}>
           <CardContent>
             <Typography variant="h6" gutterBottom>
               Get a Role
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Select a role to get it assigned immediately. No approval needed.
             </Typography>
-            <Box display="flex" flexWrap="wrap" gap={2}>
+            <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))" gap={2}>
               {roles
                 .filter(role => !user?.roles?.includes(role.name))
-                .map((role) => (
-                  <Button
+                .map((role, index) => (
+                  <motion.div
                     key={role._id}
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                      setSelectedRoleForRequest(role);
-                      setRequestRoleDialogOpen(true);
-                    }}
-                    sx={{ minWidth: 150 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ y: -4 }}
                   >
-                    Get @{role.name}
-                  </Button>
+                    <Card 
+                      variant="outlined"
+                      sx={{ 
+                        height: '100%', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        transition: 'all 0.2s',
+                        cursor: 'pointer',
+                      }}
+                    >
+                    <CardContent sx={{ flexGrow: 1 }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Chip
+                          label={`@${role.name}`}
+                          sx={{
+                            backgroundColor: role.color,
+                            color: 'white',
+                            fontWeight: 'bold'
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 40 }}>
+                        {role.description || 'No description available'}
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          setSelectedRoleForRequest(role);
+                          setRequestRoleDialogOpen(true);
+                        }}
+                        fullWidth
+                        sx={{
+                          backgroundColor: role.color,
+                          '&:hover': {
+                            backgroundColor: role.color,
+                            opacity: 0.9
+                          }
+                        }}
+                      >
+                        Get Role
+                      </Button>
+                    </CardContent>
+                  </Card>
+                  </motion.div>
                 ))}
             </Box>
           </CardContent>
-        </Card>
-      )}
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       {/* User's Notifications */}
       {notifications.length > 0 && (
@@ -719,23 +882,32 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* Admin Tabs */}
-      {user?.isAdmin && (
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Tabs
-              value={adminTab}
-              onChange={(_, v) => setAdminTab(v)}
-              variant="scrollable"
-              scrollButtons="auto"
+        {/* Admin Tabs */}
+        <AnimatePresence mode="wait">
+          {user?.isAdmin && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.3 }}
             >
-              <Tab label="Roles" />
-              <Tab label="User Management" />
-              <Tab label="Whop Members" />
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Tabs
+                    value={adminTab}
+                    onChange={(_, v) => setAdminTab(v)}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                  >
+                    <Tab label="Roles" />
+                    <Tab label="User Management" />
+                    <Tab label="Whop Members" />
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       {/* Roles Grid (Admin Tab 0) */}
       {user?.isAdmin && adminTab === 0 ? (
@@ -1203,11 +1375,30 @@ export default function HomePage() {
           Get Role: @{selectedRoleForRequest?.name}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body1" gutterBottom sx={{ mt: 1 }}>
-            Role Description:
+          <Box display="flex" alignItems="center" gap={2} mb={2}>
+            <Chip
+              label={`@${selectedRoleForRequest?.name}`}
+              sx={{
+                backgroundColor: selectedRoleForRequest?.color || '#1976d2',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.875rem'
+              }}
+            />
+          </Box>
+          {selectedRoleForRequest?.description && (
+            <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
+              <strong>Description:</strong>
+            </Typography>
+          )}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {selectedRoleForRequest?.description || 'No description available'}
+          </Typography>
+          <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
+            You will receive the role <strong>@{selectedRoleForRequest?.name}</strong> immediately.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {selectedRoleForRequest?.description}
+            This role will be assigned to you right away.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1215,6 +1406,13 @@ export default function HomePage() {
           <Button
             onClick={handleRequestRole}
             variant="contained"
+            sx={{
+              backgroundColor: selectedRoleForRequest?.color || '#1976d2',
+              '&:hover': {
+                backgroundColor: selectedRoleForRequest?.color || '#1976d2',
+                opacity: 0.9
+              }
+            }}
           >
             Get Role
           </Button>
@@ -1242,5 +1440,6 @@ export default function HomePage() {
         </Alert>
       </Snackbar>
       </Container>
+    </Box>
   );
 }
