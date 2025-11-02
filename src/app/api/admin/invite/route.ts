@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getWhopSdk } from '@/lib/whop';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { ensureAndAssignAllRole } from '@/lib/autoAssignAllRole';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,6 +48,18 @@ export async function POST(request: NextRequest) {
       isAdmin: false,
     });
     await saved.save();
+
+    // Automatically assign "@all" role to the invited user
+    try {
+      await ensureAndAssignAllRole(userId, companyId);
+      // Refresh user data to get updated roles
+      const updatedUser = await User.findOne({ companyId, userId });
+      if (updatedUser) {
+        saved.roles = updatedUser.roles;
+      }
+    } catch {
+      // Ignore errors - role assignment is best-effort
+    }
 
     // 2) Optionally call Whop to send invite (best-effort; not required for DB save)
     // Try multiple potential SDK invitation methods for compatibility

@@ -692,6 +692,7 @@ export default function HomePage() {
                   <Box display="flex" flexWrap="wrap" gap={1.5} mb={2}>
                     {user.roles.filter(role => role && role.trim() !== '').map((roleName) => {
                       const roleColor = roles.find(r => r.name === roleName)?.color;
+                      const isAllRole = roleName.toLowerCase() === 'all';
                       return (
                         <motion.div
                           key={roleName}
@@ -701,20 +702,22 @@ export default function HomePage() {
                           <Chip
                             label={`@${roleName}`}
                             icon={<CheckIcon />}
-                            onDelete={() => handleRemoveRole(roleName)}
-                            deleteIcon={
-                              <motion.div
-                                whileHover={{ scale: 1.2, rotate: 90 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                <DeleteIcon 
-                                  sx={{ 
-                                    fontSize: '1rem',
-                                    color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
-                                  }} 
-                                />
-                              </motion.div>
-                            }
+                            {...(isAllRole ? {} : {
+                              onDelete: () => handleRemoveRole(roleName),
+                              deleteIcon: (
+                                <motion.div
+                                  whileHover={{ scale: 1.2, rotate: 90 }}
+                                  whileTap={{ scale: 0.9 }}
+                                >
+                                  <DeleteIcon 
+                                    sx={{ 
+                                      fontSize: '1rem',
+                                      color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
+                                    }} 
+                                  />
+                                </motion.div>
+                              )
+                            })}
                             sx={{
                               backgroundColor: roleColor || (mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(25, 118, 210, 0.1)'),
                               color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
@@ -724,16 +727,18 @@ export default function HomePage() {
                               boxShadow: roleColor 
                                 ? `0 2px 8px ${roleColor}30, 0 1px 3px rgba(0, 0, 0, 0.1)`
                                 : '0 1px 3px rgba(0, 0, 0, 0.1)',
-                              cursor: 'pointer',
+                              cursor: isAllRole ? 'default' : 'pointer',
                               '& .MuiChip-icon': {
                                 color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
                               },
-                              '& .MuiChip-deleteIcon': {
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                  color: mode === 'dark' ? '#ef4444' : '#dc2626',
+                              ...(isAllRole ? {} : {
+                                '& .MuiChip-deleteIcon': {
+                                  transition: 'all 0.2s',
+                                  '&:hover': {
+                                    color: mode === 'dark' ? '#ef4444' : '#dc2626',
+                                  },
                                 },
-                              },
+                              }),
                             }}
                           />
                         </motion.div>

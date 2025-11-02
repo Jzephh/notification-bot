@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
 
     const roleNameLower = roleName.toLowerCase().trim();
 
+    // Prevent removal of "@all" role
+    if (roleNameLower === 'all') {
+      return NextResponse.json({ error: 'The "@all" role cannot be removed' }, { status: 400 });
+    }
+
     // Check if user has this role
     if (!user.roles.includes(roleNameLower)) {
       return NextResponse.json({ error: 'You do not have this role' }, { status: 400 });

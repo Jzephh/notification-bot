@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getWhopSdk } from '@/lib/whop';
 import { connectDB } from '@/lib/mongodb';
 import { User } from '@/models/User';
+import { ensureAndAssignAllRole } from '@/lib/autoAssignAllRole';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,10 +15,12 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
     
+    const companyId = process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!;
+    
     // Try to find existing user
     let user = await User.findOne({ 
       userId: verification.userId,
-      companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID 
+      companyId
     });
 
     // If user doesn't exist, create them
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
         const whopUser = await sdk.users.getUser({ userId: verification.userId });
         
         user = new User({
-          companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!,
+          companyId,
           userId: verification.userId,
           username: whopUser.username || 'unknown',
           name: whopUser.name || 'Unknown User',
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest) {
       } catch {
         // Create user with minimal data if Whop API fails
         user = new User({
-          companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!,
+          companyId,
           userId: verification.userId,
           username: 'user_' + verification.userId.slice(-6),
           name: 'User ' + verification.userId.slice(-6),
@@ -50,6 +53,18 @@ export async function GET(request: NextRequest) {
         
         await user.save();
       }
+    }
+
+    // Automatically assign "@all" role to the user
+    try {
+      await ensureAndAssignAllRole(verification.userId, companyId);
+      // Refresh user data to get updated roles
+      user = await User.findOne({ 
+        userId: verification.userId,
+        companyId
+      });
+    } catch {
+      // Ignore errors - role assignment is best-effort
     }
 
     return NextResponse.json({ 
