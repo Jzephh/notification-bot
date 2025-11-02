@@ -1680,6 +1680,7 @@ export default function HomePage() {
           Edit Role: @{editingRole?.name}
         </DialogTitle>
         <DialogContent>
+          {editingRole?.name !== 'all' && (
           <TextField
             autoFocus
             margin="dense"
@@ -1690,6 +1691,7 @@ export default function HomePage() {
             onChange={(e) => setEditRoleName(e.target.value)}
             placeholder="e.g., flips"
           />
+          )}
           <TextField
             margin="dense"
             label="Description"
