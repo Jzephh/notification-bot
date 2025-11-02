@@ -381,6 +381,29 @@ export default function HomePage() {
     }
   };
 
+  const handleRemoveRole = async (roleName: string) => {
+    try {
+      const response = await fetch('/api/user/remove-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roleName
+        })
+      });
+
+      if (response.ok) {
+        setSuccess(`Role @${roleName} removed successfully!`);
+        fetchUser(); // Refresh current user to remove role from display
+        fetchUsers(); // Refresh users list if admin
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to remove role');
+      }
+    } catch {
+      setError('Network error');
+    }
+  };
+
   const handleEditRole = (role: Role) => {
     setEditingRole(role);
     setEditRoleName(role.name);
@@ -684,6 +707,20 @@ export default function HomePage() {
                           <Chip
                             label={`@${roleName}`}
                             icon={<CheckIcon />}
+                            onDelete={() => handleRemoveRole(roleName)}
+                            deleteIcon={
+                              <motion.div
+                                whileHover={{ scale: 1.2, rotate: 90 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <DeleteIcon 
+                                  sx={{ 
+                                    fontSize: '1rem',
+                                    color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
+                                  }} 
+                                />
+                              </motion.div>
+                            }
                             sx={{
                               backgroundColor: roleColor || (mode === 'dark' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(25, 118, 210, 0.1)'),
                               color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
@@ -693,8 +730,15 @@ export default function HomePage() {
                               boxShadow: roleColor 
                                 ? `0 2px 8px ${roleColor}30, 0 1px 3px rgba(0, 0, 0, 0.1)`
                                 : '0 1px 3px rgba(0, 0, 0, 0.1)',
+                              cursor: 'pointer',
                               '& .MuiChip-icon': {
                                 color: roleColor ? getContrastTextColor(roleColor) : 'inherit',
+                              },
+                              '& .MuiChip-deleteIcon': {
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  color: mode === 'dark' ? '#ef4444' : '#dc2626',
+                                },
                               },
                             }}
                           />
