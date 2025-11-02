@@ -95,9 +95,7 @@ export default function HomePage() {
   // Dialog states
   const [createRoleOpen, setCreateRoleOpen] = useState(false);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
-  const [requestRoleDialogOpen, setRequestRoleDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [selectedRoleForRequest, setSelectedRoleForRequest] = useState<Role | null>(null);
 
   // Form states
   const [newRoleName, setNewRoleName] = useState('');
@@ -354,22 +352,18 @@ export default function HomePage() {
     }
   };
 
-  const handleRequestRole = async () => {
-    if (!selectedRoleForRequest) return;
-
+  const handleRequestRole = async (role: Role) => {
     try {
       const response = await fetch('/api/role-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roleName: selectedRoleForRequest.name
+          roleName: role.name
         })
       });
 
       if (response.ok) {
-        setSuccess(`Role @${selectedRoleForRequest.name} assigned successfully!`);
-        setRequestRoleDialogOpen(false);
-        setSelectedRoleForRequest(null);
+        setSuccess(`Role @${role.name} assigned successfully!`);
         fetchUser(); // Refresh current user to show new role
         fetchUsers(); // Refresh users list if admin
       } else {
@@ -887,10 +881,7 @@ export default function HomePage() {
                       <Button
                         variant="contained"
                         startIcon={<AddIcon />}
-                        onClick={() => {
-                          setSelectedRoleForRequest(role);
-                          setRequestRoleDialogOpen(true);
-                        }}
+                        onClick={() => handleRequestRole(role)}
                         fullWidth
                         sx={{
                           backgroundColor: role.color,
@@ -1710,65 +1701,6 @@ export default function HomePage() {
         </DialogActions>
       </Dialog>
 
-      {/* Get Role Dialog */}
-      <Dialog open={requestRoleDialogOpen} onClose={() => setRequestRoleDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Get Role: @{selectedRoleForRequest?.name}
-        </DialogTitle>
-        <DialogContent>
-          <Box display="flex" alignItems="center" gap={2} mb={2}>
-            <Chip
-              label={`@${selectedRoleForRequest?.name}`}
-              sx={{
-                backgroundColor: selectedRoleForRequest?.color || '#1976d2',
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: '0.875rem'
-              }}
-            />
-          </Box>
-          {selectedRoleForRequest?.description && (
-            <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
-              <strong>Description:</strong>
-            </Typography>
-          )}
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {selectedRoleForRequest?.description || 'No description available'}
-          </Typography>
-          <Typography variant="body1" gutterBottom sx={{ mt: 2 }}>
-            You will receive the role <strong>@{selectedRoleForRequest?.name}</strong> immediately.
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            This role will be assigned to you right away.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRequestRoleDialogOpen(false)}>Cancel</Button>
-          <Button
-            onClick={handleRequestRole}
-            variant="contained"
-            sx={{
-              backgroundColor: selectedRoleForRequest?.color || '#1976d2',
-              color: getContrastTextColor(selectedRoleForRequest?.color || '#1976d2'),
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              textTransform: 'none',
-              borderRadius: '8px',
-              py: 1.2,
-              boxShadow: `0 4px 12px ${(selectedRoleForRequest?.color || '#1976d2')}40, 0 2px 4px rgba(0, 0, 0, 0.1)`,
-              border: `1px solid ${darkenColor(selectedRoleForRequest?.color || '#1976d2', 15)}`,
-              '&:hover': {
-                backgroundColor: darkenColor(selectedRoleForRequest?.color || '#1976d2', 10),
-                boxShadow: `0 6px 16px ${(selectedRoleForRequest?.color || '#1976d2')}60, 0 4px 8px rgba(0, 0, 0, 0.15)`,
-                transform: 'translateY(-1px)',
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
-          >
-            Get Role
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Snackbars */}
       <Snackbar
